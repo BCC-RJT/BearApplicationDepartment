@@ -92,6 +92,45 @@ async def cleanup(ctx):
     except Exception as e:
         await ctx.send(f"❌ Error running script: {str(e)}")
 
+# ... existing code ...
+    except Exception as e:
+        await ctx.send(f"❌ Error running script: {str(e)}")
+
+# --- BAD Integration ---
+import sys
+# Add parent directory to path to import db
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from src import db
+    # Initialize DB on startup
+    db.init_db()
+except ImportError as e:
+    print(f"⚠️ Warning: perform_db_ops failed: {e}")
+
+@bot.command(name='result')
+async def get_result_cmd(ctx, job_id: str):
+    """Retrieves the latest result link for a given Job ID."""
+    try:
+        res = db.get_latest_result(job_id)
+        if res:
+            await ctx.send(f"📂 **Result for Job {job_id}**\nLink: {res['file_url']}\nType: {res['result_type']}\nCreated: {res['created_at']}")
+        else:
+            await ctx.send(f"⚠️ No results found for Job ID `{job_id}`.")
+    except Exception as e:
+        await ctx.send(f"❌ Error fetching result: {e}")
+
+@bot.command(name='add_result')
+@authorized_only()
+async def add_result_cmd(ctx, job_id: str, url: str, rtype: str = 'manual'):
+    """Manually adds a result (for testing or admin use)."""
+    try:
+        row_id = db.add_result(job_id, url, rtype)
+        await ctx.send(f"✅ Result added for Job `{job_id}` (Row ID: {row_id})")
+    except Exception as e:
+        await ctx.send(f"❌ Error adding result: {e}")
+
+# --- End BAD Integration ---
+
 # Run the bot
 if __name__ == "__main__":
     if not DISCORD_TOKEN or not GITHUB_TOKEN or not REPO_NAME:
