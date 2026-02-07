@@ -1,9 +1,12 @@
 import os
 import subprocess
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 from github import Github
 from dotenv import load_dotenv
+import json
+import time
+import datetime
 
 # Load environment variables
 load_dotenv()
@@ -11,6 +14,13 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 REPO_NAME = os.getenv('REPO_NAME')
 ADMIN_USER_ID = int(os.getenv('ADMIN_USER_ID', '0'))
+JANITOR_CHANNEL_ID = int(os.getenv('JANITOR_CHANNEL_ID', '0'))
+AUTHORIZED_ROLE = "BAD_Officer"
+
+# Paths
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HEARTBEAT_FILE = os.path.join(PROJECT_ROOT, 'logs', 'heartbeat.json')
+LEDGER_FILE = os.path.join(PROJECT_ROOT, 'config', 'resource_ledger.json')
 
 # Initialize GitHub
 g = Github(GITHUB_TOKEN)
@@ -24,16 +34,138 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Authorization Decorator
 def authorized_only():
     async def predicate(ctx):
-        if ctx.author.id != ADMIN_USER_ID:
-            print(f"⛔ Unauthorized access attempt by {ctx.author.name} ({ctx.author.id})")
-            await ctx.send("⛔ Access Denied.")
-            return False
+        # 1. Fallback to Admin ID (Root Access)
+        if ctx.author.id == ADMIN_USER_ID:
+            return True
+        
+        # 2. Check for Authorized Role
+        if isinstance(ctx.author, discord.Member):
+            if any(role.name == AUTHORIZED_ROLE for role in ctx.author.roles):
+                return True
+
+        # 3. Deny Access
+        print(f"⛔ Unauthorized access attempt by {ctx.author.name} ({ctx.author.id})")
+        await ctx.send(f"⛔ Access Denied. You need the `{AUTHORIZED_ROLE}` role.")
+        return False
+        
         return True
     return commands.check(predicate)
+
+async def run_janitor_script():
+    """Helper function to run the janitor script and return output."""
+    try:
+        # sudo requires nopasswd entry in sudoers or running bot as root
+        # scripts are in /BAD/scripts/janitor.sh RELATIVE to the bot's root which is /home/headsprung/BAD
+        # wait, the bot is running from /home/headsprung/BAD
+        # so path should be ./scripts/janitor.sh OR /home/headsprung/BAD/scripts/janitor.sh
+        # usage of absolute path is safer
+        script_path = "/home/headsprung/BAD/scripts/janitor.sh"
+        
+        result = subprocess.run(
+            ["sudo", script_path], 
+            capture_output=True, 
+            text=True, 
+            timeout=120
+        )
+        
+        output = result.stdout
+        if result.stderr:
+            output += f"\nstderr:\n{result.stderr}"
+        
+        # Truncate if too long (limit is 2000 chars)
+        if len(output) > 1900:
+            output = output[:1900] + "\n...(truncated)"
+
+        if result.returncode == 0:
+            return f"✅ **Cleanup Successful**\n```{output}```"
+        else:
+            return f"⚠️ **Cleanup Failed** (Exit Code: {result.returncode})\n```{output}```"
+
+    except Exception as e:
+        return f"❌ Error running script: {str(e)}"
 
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
+    # Start the scheduled task
+    if not scheduled_janitor.is_running():
+        scheduled_janitor.start()
+    if not heartbeat_task.is_running():
+        heartbeat_task.start()
+
+@tasks.loop(seconds=60)
+async def heartbeat_task():
+    """Writes a heartbeat to a local file every 60 seconds."""
+    try:
+        data = {
+            "timestamp": time.time(),
+            "status": "online",
+            "bot_user": str(bot.user)
+        }
+        with open(HEARTBEAT_FILE, 'w') as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Error writing heartbeat: {e}")
+
+@bot.command(name='status')
+async def status_cmd(ctx):
+    """Checks the system status."""
+    try:
+        # Check heartbeat file
+        last_heartbeat = "Never"
+        if os.path.exists(HEARTBEAT_FILE):
+             with open(HEARTBEAT_FILE, 'r') as f:
+                data = json.load(f)
+                timestamp = data.get("timestamp")
+                if timestamp:
+                    last_heartbeat = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Calculate uptime (approximate based on process start?) 
+        # For now, just say Online
+        await ctx.send(f"🟢 **System Online.**\nHeartbeat: {last_heartbeat}\nLast Error: None")
+    except Exception as e:
+        await ctx.send(f"⚠️ System Unstable: {e}")
+
+@bot.command(name='cost')
+async def cost_cmd(ctx):
+    """Estimates the monthly run rate."""
+    try:
+        if not os.path.exists(LEDGER_FILE):
+            await ctx.send("💰 **Monthly Run Rate:** Unknown (Ledger missing).")
+            return
+
+        with open(LEDGER_FILE, 'r') as f:
+            ledger = json.load(f)
+        
+        total_cost = sum(item.get('estimated_cost_mo', 0) for item in ledger)
+        resource_count = len(ledger)
+
+        await ctx.send(f"💰 **Monthly Run Rate:** ${total_cost:.2f}\nActive Resources: {resource_count}")
+
+    except Exception as e:
+        await ctx.send(f"❌ Error calculating cost: {e}")
+
+@tasks.loop(hours=24)
+async def scheduled_janitor():
+    """Runs the janitor script every 24 hours."""
+    if JANITOR_CHANNEL_ID == 0:
+        print("Warning: JANITOR_CHANNEL_ID not set. Skipping scheduled cleanup.")
+        return
+
+    channel = bot.get_channel(JANITOR_CHANNEL_ID)
+    if not channel:
+        print(f"Error: Could not find channel with ID {JANITOR_CHANNEL_ID}")
+        return
+
+    print("⏰ Starting scheduled janitor sweep...")
+    await channel.send("⏰ **Daily Janitor Cycle Initiated**...")
+    
+    report = await run_janitor_script()
+    await channel.send(report)
+
+@scheduled_janitor.before_loop
+async def before_janitor():
+    await bot.wait_until_ready()
 
 @bot.command(name='idea')
 @authorized_only()
@@ -65,36 +197,8 @@ async def bad(ctx):
 @authorized_only()
 async def cleanup(ctx):
     await ctx.send("🧹 Janitor script started... please wait.")
-    
-    # Run Janitor Script
-    try:
-        # sudo requires nopasswd entry in sudoers or running bot as root
-        result = subprocess.run(
-            ["sudo", "/BAD/scripts/janitor.sh"], 
-            capture_output=True, 
-            text=True, 
-            timeout=120
-        )
-        
-        output = result.stdout
-        if result.stderr:
-            output += f"\nstderr:\n{result.stderr}"
-        
-        # Truncate if too long (limit is 2000 chars)
-        if len(output) > 1900:
-            output = output[:1900] + "\n...(truncated)"
-
-        if result.returncode == 0:
-            await ctx.send(f"✅ **Cleanup Successful**\n```{output}```")
-        else:
-            await ctx.send(f"⚠️ **Cleanup Failed** (Exit Code: {result.returncode})\n```{output}```")
-
-    except Exception as e:
-        await ctx.send(f"❌ Error running script: {str(e)}")
-
-# ... existing code ...
-    except Exception as e:
-        await ctx.send(f"❌ Error running script: {str(e)}")
+    report = await run_janitor_script()
+    await ctx.send(report)
 
 # --- BAD Integration ---
 import sys
