@@ -1,0 +1,6 @@
+# This file defines code owners.
+# https://help.github.com/articles/about-codeowners/
+
+* @org/engineering-team
+/docs/ @org/tech-writers
+/scripts/ @org/devops
