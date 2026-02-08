@@ -1,0 +1,3 @@
+[submodule "engineering-playbook"]
+	path = engineering-playbook
+	url = https://github.com/BCC-RJT/engineering-playbook.git
