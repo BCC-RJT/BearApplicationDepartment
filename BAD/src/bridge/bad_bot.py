@@ -297,10 +297,11 @@ async def on_message(message):
                 elif actions:
                     embed = discord.Embed(
                         title="🧠 Proposed Plan",
-                        description=plan_summary,
+                        description=plan_summary[:4096],
                         color=discord.Color.blue()
                     )
-                    embed.add_field(name="Thinking", value=thought_process, inline=False)
+                    thought_process_truncated = (thought_process[:1000] + '...') if len(thought_process) > 1000 else thought_process
+                    embed.add_field(name="Thinking", value=thought_process_truncated, inline=False)
                     embed.add_field(name="Actions to Execute", value=", ".join(actions), inline=False)
                     embed.set_footer(text="React with ✅ to execute this plan.")
                     

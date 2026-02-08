@@ -1,6 +1,6 @@
 [
     {
-        "resource_id": "foundation-vm",
+        "resource_id": "BAD-PROD-VM-FOUNDATION",
         "type": "compute",
         "owner": "bad_bot",
         "estimated_cost_mo": 30.00

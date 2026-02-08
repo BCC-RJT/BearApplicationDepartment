@@ -1,0 +1,26 @@
+{
+    "cleanup": {
+        "script": "scripts/janitor.sh",
+        "description": "Run the daily janitorial cleanup script.",
+        "interpreter": "bash",
+        "sudo": true
+    },
+    "sync": {
+        "script": "scripts/sync_playbook.sh",
+        "description": "Synchronize the engineering playbook with the organization.",
+        "interpreter": "bash",
+        "sudo": false
+    },
+    "issue_manage": {
+        "script": "scripts/github_issues.py",
+        "description": "Manage GitHub issues. Arguments: <command> [args...]. Commands: list, get <id>, close <id>, comment <id> <body>.",
+        "interpreter": "python",
+        "sudo": false
+    },
+    "remember": {
+        "script": "scripts/remember.py",
+        "description": "Remember/recall info. Args: set <category> <key> <value> OR get <category> <key>. Categories: preferences, facts.",
+        "interpreter": "python",
+        "sudo": false
+    }
+}
