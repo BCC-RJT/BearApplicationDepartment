@@ -1,0 +1,8 @@
+[
+    {
+        "resource_id": "foundation-vm",
+        "type": "compute",
+        "owner": "bad_bot",
+        "estimated_cost_mo": 30.00
+    }
+]

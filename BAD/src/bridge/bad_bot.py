@@ -1,12 +1,12 @@
 import os
 import subprocess
+import json
+import time
+import datetime
 import discord
 from discord.ext import tasks, commands
 from github import Github
 from dotenv import load_dotenv
-import json
-import time
-import datetime
 
 # Load environment variables
 load_dotenv()
@@ -47,18 +47,12 @@ def authorized_only():
         print(f"⛔ Unauthorized access attempt by {ctx.author.name} ({ctx.author.id})")
         await ctx.send(f"⛔ Access Denied. You need the `{AUTHORIZED_ROLE}` role.")
         return False
-        
-        return True
     return commands.check(predicate)
 
 async def run_janitor_script():
     """Helper function to run the janitor script and return output."""
     try:
-        # sudo requires nopasswd entry in sudoers or running bot as root
-        # scripts are in /BAD/scripts/janitor.sh RELATIVE to the bot's root which is /home/headsprung/BAD
-        # wait, the bot is running from /home/headsprung/BAD
-        # so path should be ./scripts/janitor.sh OR /home/headsprung/BAD/scripts/janitor.sh
-        # usage of absolute path is safer
+        # Script path
         script_path = "/home/headsprung/BAD/scripts/janitor.sh"
         
         result = subprocess.run(
@@ -87,7 +81,7 @@ async def run_janitor_script():
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
-    # Start the scheduled task
+    # Start the scheduled tasks
     if not scheduled_janitor.is_running():
         scheduled_janitor.start()
     if not heartbeat_task.is_running():
@@ -102,10 +96,17 @@ async def heartbeat_task():
             "status": "online",
             "bot_user": str(bot.user)
         }
+        # Ensure log directory exists
+        os.makedirs(os.path.dirname(HEARTBEAT_FILE), exist_ok=True)
+        
         with open(HEARTBEAT_FILE, 'w') as f:
             json.dump(data, f)
     except Exception as e:
         print(f"Error writing heartbeat: {e}")
+
+@heartbeat_task.before_loop
+async def before_heartbeat():
+    await bot.wait_until_ready()
 
 @bot.command(name='status')
 async def status_cmd(ctx):
@@ -120,8 +121,6 @@ async def status_cmd(ctx):
                 if timestamp:
                     last_heartbeat = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Calculate uptime (approximate based on process start?) 
-        # For now, just say Online
         await ctx.send(f"🟢 **System Online.**\nHeartbeat: {last_heartbeat}\nLast Error: None")
     except Exception as e:
         await ctx.send(f"⚠️ System Unstable: {e}")
@@ -191,7 +190,7 @@ async def idea(ctx, *, content: str):
 @bot.group(name='bad', invoke_without_command=True)
 @authorized_only()
 async def bad(ctx):
-    await ctx.send("available commands: cleanup")
+    await ctx.send("available commands: cleanup, status, cost")
 
 @bad.command(name='cleanup')
 @authorized_only()

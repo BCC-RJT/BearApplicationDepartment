@@ -7,7 +7,7 @@ import statistics
 
 try:
     from dotenv import load_dotenv
-    from github import Github, GithubException
+    from github import Github, GithubException, Auth
 except ImportError as e:
     print(f"Error: Missing dependency. {e}")
     print("Please run: pip install PyGithub python-dotenv")
@@ -55,7 +55,8 @@ def get_linked_issue_time(pr, repo):
 
 def calculate_metrics(token, repo_name):
     """Fetch data and calculate DORA metrics."""
-    g = Github(token)
+    auth = Auth.Token(token)
+    g = Github(auth=auth)
     try:
         repo = g.get_repo(repo_name)
     except GithubException as e:
@@ -144,6 +145,9 @@ def get_verdict(deployment_count, lead_time_seconds, failure_rate):
     # High: Weekly deployments, < 1 week lead time, < 30% failure
     # ...
     
+    if deployment_count == 0:
+        return "Low"
+
     score = 0
     
     # deploy frequency
@@ -156,6 +160,7 @@ def get_verdict(deployment_count, lead_time_seconds, failure_rate):
     if lead_time_seconds < day_seconds: score += 3
     elif lead_time_seconds < day_seconds * 7: score += 2
     elif lead_time_seconds < day_seconds * 30: score += 1
+    # If longer than 30 days (which shouldn't happen with our query but technically possible if calculation is weird), 0 points
     
     # failure rate
     if failure_rate < 15: score += 3
