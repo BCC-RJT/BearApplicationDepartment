@@ -113,4 +113,5 @@ class ProjectManager(commands.Cog):
             await channel.send(f"❌ Creation failed: {e}")
 
 async def setup(bot):
+    print("DEBUG: Loading ProjectManager cog from modified file...")
     await bot.add_cog(ProjectManager(bot))
