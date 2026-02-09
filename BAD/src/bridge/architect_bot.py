@@ -28,6 +28,7 @@ ADMIN_USER_ID = int(os.getenv('DISCORD_ALLOWED_USER_ID', '0'))
 # Initialize Discord
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True # Required to see members in channels
 bot = commands.Bot(command_prefix='?', intents=intents)
 
 # Integrate Agent Brain
@@ -49,14 +50,17 @@ history = deque(maxlen=20)
 async def on_ready():
     print(f'📐 Project Planner is online as {bot.user}')
     print(f'   Primary Planning Channel ID: {PLANNING_CHANNEL_ID}')
+    print(f'   Ready to manage tickets.')
     sys.stdout.flush()
 
 @bot.event
 async def on_guild_channel_create(channel):
     """Detects new ticket channels and joins them."""
+    print(f"DEBUG: Channel Created Event: {channel.name} (ID: {channel.id}, Type: {channel.type})")
+    
     if isinstance(channel, discord.TextChannel) and channel.name.startswith("ticket-"):
         print(f"DEBUG: Detected new ticket channel: {channel.name}")
-        # Wait a bit for permissions to settle? Usually not needed if bot has admin/manage_channels
+        # Wait a bit for permissions to settle
         await asyncio.sleep(2) 
         try:
             greeting = (
