@@ -8,29 +8,10 @@ class ProjectManager(commands.Cog):
         self.bot = bot
         self.tickets = {} # {channel_id: {"state": "...", "history": []}}
 
-    @commands.Cog.listener()
-    async def on_guild_channel_create(self, channel):
-        if not isinstance(channel, discord.TextChannel):
-            return
-
-        if channel.name.startswith("ticket-"):
-            print(f"🎫 New Ticket Channel Detected: {channel.name} ({channel.id})")
-            await asyncio.sleep(2)
-            
-            self.tickets[channel.id] = {
-                "state": "INIT",
-                "history": []
-            }
-            
-            embed = discord.Embed(
-                title="🏗️ Project Manager",
-                description="Hello! I see a new ticket. Is this for a New Project? \n\nIf yes, type **'Plan Project'** to get started.",
-                color=discord.Color.gold()
-            )
-            try:
-                await channel.send(embed=embed)
-            except Exception as e:
-                print(f"Error sending welcome message to {channel.name}: {e}")
+    # Listener removed to prevent BADbot from auto-joining tickets
+    # @commands.Cog.listener()
+    # async def on_guild_channel_create(self, channel):
+    #     pass
 
     @commands.Cog.listener()
     async def on_message(self, message):

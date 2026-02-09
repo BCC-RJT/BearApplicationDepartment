@@ -27,3 +27,4 @@ yarn-error.log*
 *.log
 bad_provision.log
 BAD/logs/
+tickets.db

@@ -51,23 +51,10 @@ async def on_ready():
     print(f'   Primary Planning Channel ID: {PLANNING_CHANNEL_ID}')
     sys.stdout.flush()
 
-@bot.event
-async def on_guild_channel_create(channel):
-    """Detects new ticket channels and joins them."""
-    if isinstance(channel, discord.TextChannel) and channel.name.startswith("ticket-"):
-        print(f"DEBUG: Detected new ticket channel: {channel.name}")
-        # Wait a bit for permissions to settle? Usually not needed if bot has admin/manage_channels
-        await asyncio.sleep(2) 
-        try:
-            greeting = (
-                "**Project Planner (Architect) connected.**\n"
-                "I am here to help you design your project ecosystem.\n"
-                "Describe your feature or requirement, and I will help you plan it.\n"
-                "When finished, run `?workflow` to generate the implementation plan."
-            )
-            await channel.send(greeting)
-        except Exception as e:
-            print(f"❌ Error sending greeting to {channel.name}: {e}")
+# Listener removed to prevent potential conflicts
+# @bot.event
+# async def on_guild_channel_create(channel):
+#     pass
 
 # Tools
 def read_file(path_arg):
