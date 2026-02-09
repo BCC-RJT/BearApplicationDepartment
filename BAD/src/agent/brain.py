@@ -11,12 +11,24 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 class AgentBrain:
     def __init__(self):
+        self.model = None
+        
         if not GOOGLE_API_KEY:
-            print("⚠️ Warning: GOOGLE_API_KEY not found. AgentBrain will not function.")
-            self.model = None
-        else:
+            print("⚠️ Warning: GOOGLE_API_KEY not found. AgentBrain features disabled.")
+            return
+
+        # Attempt to verify key with a lightweight call
+        try:
             genai.configure(api_key=GOOGLE_API_KEY)
-            self.model = genai.GenerativeModel('gemini-2.5-flash') # Fallback to stable model
+            test_model = genai.GenerativeModel('gemini-2.0-flash')
+            # Dry run a simple generation to test auth (count_tokens is fast)
+            test_model.count_tokens("test")
+            self.model = test_model
+            print("✅ AgentBrain initialized successfully with Gemini 2.0 Flash")
+        except Exception as e:
+            print(f"❌ Error initializing AgentBrain (Invalid API Key?): {e}")
+            print("⚠️ AgentBrain features disabled due to initialization failure.")
+            self.model = None
 
     def load_memory(self):
         memory_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config', 'memory.json')
@@ -101,7 +113,8 @@ class AgentBrain:
         Processes the user message and returns a structured plan or reply.
         """
         if not self.model:
-            return {"reply": "❌ I am not active. Please set `GOOGLE_API_KEY`."}
+            # Return a professional "offline" message instead of technical error
+            return {"reply": "I apologize, but my AI systems are currently offline. A staff member will be with you shortly."}
 
         # Load Long-Term Memory
         memory_content = self.load_memory()
@@ -273,7 +286,7 @@ RESPONSE FORMAT (JSON ONLY):
         else:
             self.client = genai.Client(api_key=GOOGLE_API_KEY)
             # Use a model that supports JSON mode well
-            self.model_name = 'gemini-2.5-flash-lite'
+            self.model_name = 'gemini-2.0-flash'
 
     def load_memory(self):
         memory_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config', 'memory.json')
@@ -363,7 +376,8 @@ RESPONSE FORMAT (JSON ONLY):
         Processes the user message and returns a structured plan or reply.
         """
         if not self.model:
-            return {"reply": "❌ I am not active. Please set `GOOGLE_API_KEY`."}
+            # Return a professional "offline" message instead of technical error
+            return {"reply": "I apologize, but my AI systems are currently offline. A staff member will be with you shortly."}
 
         # Load Long-Term Memory
         memory_content = self.load_memory()
@@ -443,6 +457,35 @@ RESPONSE FORMAT (JSON ONLY):
 {{
   "thought_process": "User wants to work but no session is active. Environment is synced.",
   "reply": "To start working on that, we need to kickoff a session. Shall I do that?",
+  "actions": [], 
+  "execute_now": false
+}}
+"""
+        elif mode == "ticket_assistant":
+            system_prompt = f"""
+You are the 'Expert Ticket Creation Assistant' for Bear Application Department.
+Your goal is to help the user create a perfect ticket by gathering all necessary information.
+
+CURRENT STATUS:
+{status_text}
+
+**YOUR BEHAVIOR**:
+1.  **Greeting**: If this is the start of the conversation, greet the user warmly and ask how you can help.
+2.  **Interview**: Ask follow-up questions to understand:
+    -   **What** is the issue?
+    -   **Who** is affected?
+    -   **When** did it start?
+    -   **Severity** (Low, Medium, High, Critical)
+3.  **Guidance**: If the user is vague, guide them to be specific.
+4.  **Completion**: When you have enough info, summarize it and tell the user to click "Submit Ticket" if they are ready.
+
+LONG-TERM MEMORY:
+{memory_content}
+
+RESPONSE FORMAT (JSON ONLY):
+{{
+  "thought_process": "User just said 'help', I need to ask what's wrong.",
+  "reply": "Hello! I'm here to help. What seems to be the issue today?",
   "actions": [], 
   "execute_now": false
 }}

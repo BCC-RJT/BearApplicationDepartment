@@ -76,11 +76,15 @@ LEDGER_FILE = os.path.join(PROJECT_ROOT, 'config', 'resource_ledger.json')
 ACTIONS_CONFIG_FILE = os.path.join(PROJECT_ROOT, 'config', 'actions.json')
 
 # Initialize GitHub
-g = Github(GITHUB_TOKEN)
-if REPO_NAME:
-    repo = g.get_repo(REPO_NAME)
-else:
-    print("⚠️ Warning: REPO_NAME not set. GitHub features will be disabled.")
+try:
+    g = Github(GITHUB_TOKEN)
+    if REPO_NAME:
+        repo = g.get_repo(REPO_NAME)
+    else:
+        print("⚠️ Warning: REPO_NAME not set. GitHub features will be disabled.")
+        repo = None
+except Exception as e:
+    print(f"⚠️ Warning: GitHub initialization failed: {e}")
     repo = None
 
 # Initialize Discord
@@ -149,9 +153,11 @@ session_manager = SessionManager()
 pending_plans = {}
 
 # Conversational History
-history = deque(maxlen=10)
+# history = deque(maxlen=10) # REPLACED BY CONVERSATION MANAGER
 
-# Authorization Decorator
+# Conversation Manager
+from src.agent.conversation_manager import ConversationManager
+conversation_manager = ConversationManager()
 def authorized_only():
     async def predicate(ctx):
         # 1. Fallback to Admin ID (Root Access)
@@ -292,7 +298,8 @@ async def on_message(message):
 
         async with message.channel.typing():
             # Add user message to history
-            history.append(f"User: {message.content}")
+            # history.append(f"User: {message.content}")
+            conversation_manager.add_user_message(message.channel.id, message.content[:1000]) # Truncate if huge
             
             # Determine context
             sync_status = "Environment Synced" if getattr(bot, "is_env_synced", False) else "Environment NOT Synced"
@@ -318,7 +325,7 @@ async def on_message(message):
                     thought = await bot.brain.think(
                         user_message=message.content,
                         available_actions=ACTIONS, 
-                        history=list(history), 
+                        history=conversation_manager.get_history(message.channel.id), 
                         status_context=status_context,
                         mode="manager"
                     )
@@ -373,7 +380,8 @@ async def on_message(message):
                 # Just Reply
                 if reply:
                     await message.channel.send(reply)
-                    history.append(f"Bot: {reply}")
+                    # history.append(f"Bot: {reply}")
+                    conversation_manager.add_bot_message(message.channel.id, reply[:1000])
                 break
 
 @bot.event
@@ -640,8 +648,11 @@ async def add_result_cmd(ctx, job_id: str, url: str, rtype: str = 'manual'):
 @authorized_only()
 async def reset_cmd(ctx):
     """Resets the conversation history."""
-    history.clear()
-    await ctx.send("🧹 **Memory Wiped.** Conversation history has been cleared.")
+    # history.clear()
+    if conversation_manager.start_new_conversation(ctx.channel.id):
+        await ctx.send("broom **Conversation Reset.** A new conversation has been started.")
+    else:
+        await ctx.send("broom **Conversation Reset.** (No active conversation was found to close).")
 
 @bot.command(name='terminate')
 @authorized_only()
