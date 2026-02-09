@@ -28,6 +28,7 @@ ADMIN_USER_ID = int(os.getenv('DISCORD_ALLOWED_USER_ID', '0'))
 # Initialize Discord
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix='?', intents=intents)
 
 # Integrate Agent Brain
@@ -50,11 +51,13 @@ async def on_ready():
     print(f'📐 Project Planner is online as {bot.user}')
     print(f'   Primary Planning Channel ID: {PLANNING_CHANNEL_ID}')
     sys.stdout.flush()
+        print("Architect Bot: on_ready triggered")
 
 # Listener removed to prevent potential conflicts
-# @bot.event
-# async def on_guild_channel_create(channel):
-#     pass
+@bot.event
+async def on_guild_channel_create(channel):
+        print(f"Architect Bot: New channel detected: {channel.name} (ID: {channel.id})")
+        sys.stdout.flush()
 
 # Tools
 def read_file(path_arg):
