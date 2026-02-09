@@ -4,7 +4,7 @@
 The **B.A.D. Bridge** connects our communication center (Discord) with our project memory (GitHub). It ensures that no idea is lost and every task is tracked.
 
 ## Architecture
-- **Interface:** Discord (`BAD-Bridge-Bot`)
+- **Interface:** Discord (`BADbot`)
 - **Logic:** Python (`bad_bot.py`) using `discord.py` and `PyGithub`.
 - **Memory:** GitHub Issues (`BearApplicationDepartment`).
 - **Security:** Tokens loaded from `.env`.
