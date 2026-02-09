@@ -22,5 +22,17 @@
         "description": "Remember/recall info. Args: set <category> <key> <value> OR get <category> <key>. Categories: preferences, facts.",
         "interpreter": "python",
         "sudo": false
+    },
+    "session_start": {
+        "script": "scripts/session_start.sh",
+        "description": "Run the beginning of session checklist: sync repo, check clean state, show handover.",
+        "interpreter": "bash",
+        "sudo": false
+    },
+    "session_end": {
+        "script": "scripts/session_end.sh",
+        "description": "Run the end of session checklist: commit and push changes.",
+        "interpreter": "bash",
+        "sudo": false
     }
 }

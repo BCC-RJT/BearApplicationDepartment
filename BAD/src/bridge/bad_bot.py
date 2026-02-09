@@ -14,9 +14,26 @@ from collections import deque
 # Paths
 # bad_bot.py -> bridge -> src -> BAD
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# repo root -> BearApplicationDepartment
-REPO_ROOT = os.path.dirname(PROJECT_ROOT)
+# REPO_ROOT calculation
+# Local: .../BearApplicationDepartment/BAD/src/bridge
+# VM: /home/Headsprung/BAD/src/bridge (BAD is sibling to BearApplicationDepartment? or standalone?)
+
+# Try to find the actual repo root
+candidate_root = os.path.dirname(PROJECT_ROOT) # Default parent
+if os.path.isdir(os.path.join(candidate_root, ".git")):
+    REPO_ROOT = candidate_root
+elif os.path.isdir(os.path.join(candidate_root, "BearApplicationDepartment")):
+    # VM Structure: ~/BAD and ~/BearApplicationDepartment
+    REPO_ROOT = os.path.join(candidate_root, "BearApplicationDepartment")
+else:
+    # Fallback to PROJECT_ROOT or current dir, but warn
+    print("⚠️ Warning: Could not find git root. Defaulting REPO_ROOT to PROJECT_ROOT.")
+    REPO_ROOT = PROJECT_ROOT
+
 ENV_PATH = os.path.join(REPO_ROOT, '.env')
+# Fallback for .env if not found in REPO (e.g. if running in detached BAD)
+if not os.path.exists(ENV_PATH):
+     ENV_PATH = os.path.join(PROJECT_ROOT, '.env')
 
 # Add project root to path to import src modules
 import sys
@@ -25,6 +42,7 @@ if PROJECT_ROOT not in sys.path:
 
 from src.bridge.session_manager import SessionManager
 
+# Setup Logging
 # Setup Logging
 LOG_FILE = os.path.join(PROJECT_ROOT, 'logs', 'bad_bot.log')
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
@@ -50,6 +68,8 @@ ADMIN_USER_ID = int(os.getenv('DISCORD_ALLOWED_USER_ID', '0'))
 JANITOR_CHANNEL_ID = int(os.getenv('JANITOR_CHANNEL_ID', '0'))
 AGENT_CHANNEL_ID = int(os.getenv('AGENT_CHANNEL_ID', '0'))
 AUTHORIZED_ROLE = "BAD_Officer"
+TEST_BOT_USER_ID = int(os.getenv('TEST_BOT_USER_ID', '0'))
+
 
 HEARTBEAT_FILE = os.path.join(PROJECT_ROOT, 'logs', 'heartbeat.json')
 LEDGER_FILE = os.path.join(PROJECT_ROOT, 'config', 'resource_ledger.json')
@@ -103,6 +123,18 @@ async def load_extensions():
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
+    
+    # Initialize state
+    bot.is_env_synced = False
+    
+    # Force nickname update to match branding
+    for guild in bot.guilds:
+        try:
+            await guild.me.edit(nick="BADbot")
+            print(f"DEBUG: Updated nickname in {guild.name} to BADbot")
+        except Exception as e:
+            print(f"⚠️ Failed to update nickname in {guild.name}: {e}")
+
     await load_extensions()
     # Start the scheduled tasks
     if not scheduled_janitor.is_running():
@@ -126,13 +158,22 @@ def authorized_only():
         if ctx.author.id == ADMIN_USER_ID:
             return True
         
-        # 2. Check for Authorized Role
+        # 2a. Check for Test Bot (Impersonation)
+        if ctx.author.id == TEST_BOT_USER_ID:
+            # Guardrail: Only allow in specific channels
+            if ctx.channel.id != AGENT_CHANNEL_ID:
+                print(f"⛔ Test Bot attempted access in unauthorized channel: {ctx.channel.name}")
+                return False
+            logger.info(f"🧪 Test Bot Authorized (Impersonating Admin) in {ctx.channel.name}")
+            return True
+
+        # 3. Check for Authorized Role
         if isinstance(ctx.author, discord.Member):
             if any(role.name == AUTHORIZED_ROLE for role in ctx.author.roles):
                 return True
 
-        # 3. Deny Access
-        print(f"⛔ Unauthorized access attempt by {ctx.author.name} ({ctx.author.id})")
+        # 4. Deny Access
+        logger.warning(f"⛔ Unauthorized access attempt by {ctx.author.name} ({ctx.author.id})")
         await ctx.send(f"⛔ Access Denied. You need the `{AUTHORIZED_ROLE}` role.")
         return False
     return commands.check(predicate)
@@ -177,10 +218,12 @@ async def run_script(action_name, args=None):
         start_time = time.time()
         
         # Async Subprocess
+        # Ensure we run in the REPO_ROOT so git commands work
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
+            cwd=REPO_ROOT
         )
         
         stdout, stderr = await process.communicate()
@@ -209,13 +252,28 @@ async def run_script(action_name, args=None):
 
 @bot.event
 async def on_message(message):
+    # Debug: Log all messages
+    print(f"DEBUG: Message from {message.author} ({message.author.id}): {message.content}")
+
     # Ignore bot's own messages
     if message.author == bot.user:
         return
 
+    # Allow Test Bot to bypass "ignore bots" rule
+    is_test_bot = (message.author.id == TEST_BOT_USER_ID)
+
     # Process commands first (starts with '!')
     if message.content.startswith('!'):
-        await bot.process_commands(message)
+        if is_test_bot:
+            # Manually permit bot to run command
+            ctx = await bot.get_context(message)
+            if ctx.valid:
+                print(f"DEBUG: Invoking command for Test Bot: {ctx.command}")
+                await bot.invoke(ctx)
+            else:
+                print("DEBUG: Invalid command context for Test Bot")
+        else:
+            await bot.process_commands(message)
         return
 
     # 1. Check for Active Session (Highest Priority)
@@ -226,24 +284,44 @@ async def on_message(message):
             await message.add_reaction("❌")
         return
 
-    # Handle Agent Interactions
+    # Natural Language Manager (No Session Active)
     if message.channel.id == AGENT_CHANNEL_ID and bot.brain:
-        # Check permissions (simple check for now, can be expanded)
-        if message.author.id != ADMIN_USER_ID and not any(role.name == AUTHORIZED_ROLE for role in getattr(message.author, 'roles', [])):
-             return # Ignore unauthorized users in agent channel
+        # Check permissions
+        if message.author.id != ADMIN_USER_ID and message.author.id != TEST_BOT_USER_ID and not any(role.name == AUTHORIZED_ROLE for role in getattr(message.author, 'roles', [])):
+             return # Ignore unauthorized users
 
         async with message.channel.typing():
             # Add user message to history
             history.append(f"User: {message.content}")
             
-            # ReAct Loop (Max 3 turns to prevent infinite loops)
+            # Determine context
+            sync_status = "Environment Synced" if getattr(bot, "is_env_synced", False) else "Environment NOT Synced"
+            
+            status_context = {
+                "active_sessions": list(session_manager.sessions.keys()),
+                "sync_status": sync_status,
+                "pending_plans": [
+                    {
+                        "id": msg_id,
+                        "plan": plan["actions"], 
+                        "status": plan["status"],
+                        "author": plan["author_id"]
+                    } for msg_id, plan in pending_plans.items()
+                ]
+            }
+            
+            # ReAct Loop (Simplified for Manager)
             executed_actions = set()
             for turn in range(3):
                 print(f"DEBUG: Turn {turn}")
-                print(f"DEBUG: History before think:\n{json.dumps(list(history), indent=2)}")
-                print(f"DEBUG: Processing User Message: {message.content}")
                 try:
-                    thought = await bot.brain.think(message.content, ACTIONS, list(history))
+                    thought = await bot.brain.think(
+                        user_message=message.content,
+                        available_actions=ACTIONS, 
+                        history=list(history), 
+                        status_context=status_context,
+                        mode="manager"
+                    )
                 except Exception as e:
                     print(f"ERROR: Brain think failed: {e}")
                     await message.channel.send(f"❌ Brain malfunction: {e}")
@@ -251,79 +329,52 @@ async def on_message(message):
                 
                 print(f"DEBUG: Brain Thought:\n{json.dumps(thought, indent=2)}")
                 
-                reply = thought.get("reply", "I'm not sure what to say.")
+                reply = thought.get("reply", "")
                 actions = thought.get("actions", [])
-                plan_summary = thought.get("plan_summary", "")
-                thought_process = thought.get("thought_process", "")
                 execute_now = thought.get("execute_now", False)
 
-                # Case 1: Execute Immediately (Safe Action)
+                # Prioritize executing actions if 'execute_now' is true (for manager this is usually command invocation)
                 if execute_now and actions:
-                    # Check for internal actions like 'remember'
-                    if actions[0].startswith("remember"):
-                        content_to_remember = actions[0].replace("remember ", "", 1)
-                        if bot.brain.save_memory(json.loads(content_to_remember) if content_to_remember.startswith("{") else content_to_remember):
-                           await message.channel.send("✅ I have updated my long-term memory.")
-                        else:
-                           await message.channel.send("❌ Failed to save memory.")
-                        continue
-
                     if actions[0] in executed_actions:
-                         print(f"DEBUG: Loop detected. Action '{actions[0]}' already executed.")
-                         # Break loop to force final reply generation or stop
                          break
-
                     executed_actions.add(actions[0])
-                    await message.channel.send(f"Wait, let me check that... (Running {actions[0]})")
                     
-                    # Execute first action (typically these are single safe lookups)
+                    if reply:
+                        await message.channel.send(reply)
+
+                    # Execute the command
                     action_str = actions[0]
-                    parts = action_str.split()
-                    action_name = parts[0]
-                    args = parts[1:] if len(parts) > 1 else []
-                    
-                    result = await run_script(action_name, args)
-                    
-                    # Add result to history
-                    print(f"DEBUG: Action Output:\n{result}")
-                    # Add result to history
-                    print(f"DEBUG: Action Output:\n{result}")
-                    history.append(f"System: Action '{action_str}' completed. Output:\n{result}\n(You must now interpret this output and provide a final answer to the user.)")
-                    
-                    # Loop back to think again with new info
+                    # Check for internal bot commands
+                    if "open" in action_str:
+                         ctx = await bot.get_context(message)
+                         await bot.invoke(bot.get_command("open"))
+                    elif "kickoff" in action_str:
+                         ctx = await bot.get_context(message)
+                         await bot.invoke(bot.get_command("kickoff"))
+                    elif "dashboard" in action_str:
+                         ctx = await bot.get_context(message)
+                         await bot.invoke(bot.get_command("dashboard"))
+                    elif "sessions" in action_str:
+                         ctx = await bot.get_context(message)
+                         await bot.invoke(bot.get_command("sessions"))
+                    elif "close" in action_str:
+                         ctx = await bot.get_context(message)
+                         await bot.invoke(bot.get_command("close"))
+                    else:
+                        # Fallback to run_script
+                        await message.channel.send(f"🔄 Running **{action_str}**...")
+                        parts = action_str.split()
+                        res = await run_script(parts[0], parts[1:] if len(parts)>1 else [])
+                        await message.channel.send(res)
+                        history.append(f"System: Action '{action_str}' output:\n{res}")
+
                     continue
 
-                # Case 2: Propose Plan (Mutating Action)
-                elif actions:
-                    embed = discord.Embed(
-                        title="🧠 Proposed Plan",
-                        description=plan_summary[:4096],
-                        color=discord.Color.blue()
-                    )
-                    thought_process_truncated = (thought_process[:1000] + '...') if len(thought_process) > 1000 else thought_process
-                    embed.add_field(name="Thinking", value=thought_process_truncated, inline=False)
-                    embed.add_field(name="Actions to Execute", value=", ".join(actions), inline=False)
-                    embed.set_footer(text="React with ✅ to execute this plan.")
-                    
-                    plan_msg = await message.channel.send(content=reply, embed=embed)
-                    await plan_msg.add_reaction("✅")
-                    
-                    # Store plan for later execution
-                    pending_plans[plan_msg.id] = {
-                        "actions": actions,
-                        "status": "pending",
-                        "author_id": message.author.id
-                    }
-                    
-                    # Add bot reply to history
-                    history.append(f"Bot: {reply} [Proposed Plan: {plan_summary}]")
-                    break
-
-                # Case 3: Just Chat
-                else:
+                # Just Reply
+                if reply:
                     await message.channel.send(reply)
                     history.append(f"Bot: {reply}")
-                    break
+                break
 
 @bot.event
 async def on_reaction_add(reaction, user):
@@ -547,6 +598,31 @@ async def get_result_cmd(ctx, job_id: str):
     except Exception as e:
         await ctx.send(f"❌ Error fetching result: {e}")
 
+@bot.command(name='kickoff')
+@authorized_only()
+async def kickoff_cmd(ctx):
+    """Starts a new interactive agent session."""
+    
+    # Ensure environment is synced (optional check, or just warn)
+    if not getattr(bot, "is_env_synced", False):
+        await ctx.send("⚠️ **Environment NOT Synced**\nIt is recommended to run `!open` first to ensure code is up to date.")
+    
+    script_path = os.path.join(PROJECT_ROOT, "src", "agent", "interactive.py")
+    if not os.path.exists(script_path):
+        await ctx.send(f"❌ Error: Agent script not found at `{script_path}`")
+        return
+
+    cmd = f"python3 {script_path}"
+    
+    success, msg = await session_manager.start_session(
+        ctx.channel.id, 
+        cmd, 
+        lambda text: ctx.send(f"🤖 {text}"), 
+        lambda code: ctx.send(f"🛑 Session ended with code {code}.")
+    )
+    
+    await ctx.send(msg)
+
 @bot.command(name='add_result')
 @authorized_only()
 async def add_result_cmd(ctx, job_id: str, url: str, rtype: str = 'manual'):
@@ -559,35 +635,13 @@ async def add_result_cmd(ctx, job_id: str, url: str, rtype: str = 'manual'):
 
 # --- Session Management Commands ---
 
-@bot.command(name='kickoff')
+
+@bot.command(name='reset')
 @authorized_only()
-async def kickoff_cmd(ctx, agent_name: str = "dummy"):
-    """Starts an interactive agent session."""
-    
-    # 1. Define available agents (This could be moved to config)
-    agents = {
-        "dummy": f"{sys.executable} {os.path.join(PROJECT_ROOT, 'scripts', 'dummy_agent.py')}",
-        # Future: "antigravity": "python3 src/agent/main.py ..."
-    }
-    
-    command = agents.get(agent_name)
-    if not command:
-        await ctx.send(f"❌ Unknown agent: `{agent_name}`. Available: {', '.join(agents.keys())}")
-        return
-
-    # 2. Define Callbacks
-    async def output_callback(text):
-        # Chunking handled by helper if needed, simplistic for now
-        if len(text) > 1900:
-            text = text[:1900] + "... (truncated)"
-        await ctx.send(f"🤖 `{text}`")
-
-    async def exit_callback(code):
-        await ctx.send(f"🛑 **Session Ends.** (Exit Code: {code})")
-
-    # 3. Start Session
-    success, msg = await session_manager.start_session(ctx.channel.id, command, output_callback, exit_callback)
-    await ctx.send(msg)
+async def reset_cmd(ctx):
+    """Resets the conversation history."""
+    history.clear()
+    await ctx.send("🧹 **Memory Wiped.** Conversation history has been cleared.")
 
 @bot.command(name='terminate')
 @authorized_only()
@@ -600,6 +654,68 @@ async def terminate_cmd(ctx):
     await ctx.send("🛑 Terminating session...")
     await session_manager.terminate_session(ctx.channel.id)
     await ctx.send("✅ Session terminated.")
+
+@bot.command(name='open')
+@authorized_only()
+async def open_session_cmd(ctx):
+    """Runs the session opening checklist and prepares for an agent session."""
+    
+    # 1. Run Session Start Script
+    status_msg = await ctx.send("🔄 **Initiating Session Start Protocol...**\nRunning checklist and syncing environment...")
+    
+    report = await run_script("session_start")
+    
+    # Check for failure in report content (simple heuristic since run_script returns string)
+    # Ideally run_script would return a structured object, but current impl returns a string.
+    # The string contains "Exit Code: X".
+    
+    success = "Exit Code: 0" in report
+    
+    if not success:
+        await ctx.send(f"❌ **Session Start Failed**\n{report}\n\n**Action Required**: Fix the issues above (e.g., commit changes) and try `!open` again.")
+        return
+
+    # 2. Success - Ready
+    bot.is_env_synced = True
+    await ctx.send(f"✅ **Environment Synced**\n{report}")
+    await ctx.send("🎯 **Session Ready**\nYou can now start working or launch an agent with `!kickoff`.")
+
+@bot.command(name='close')
+@authorized_only()
+async def close_session_cmd(ctx, *, message: str = ""):
+    """Runs the session closing checklist and commits work."""
+    
+    await ctx.send("🔄 **Initiating Session End Protocol...**\nChecking for changes and committing...")
+    
+    # 1. Run Session End Script
+    args = [message] if message else []
+    report = await run_script("session_end", args)
+    
+    # Check for success
+    success = "Exit Code: 0" in report
+    
+    if not success:
+         await ctx.send(f"❌ **Session Close Failed**\n{report}")
+         return
+
+    # 2. Success
+    await ctx.send(f"✅ **Session Closed**\n{report}")
+
+@bot.command(name='sessions')
+@authorized_only()
+async def sessions_cmd(ctx):
+    """Lists all active agent sessions."""
+    if not session_manager.sessions:
+        await ctx.send("There are no active sessions running.")
+        return
+
+    msg = "**Active Sessions:**\n"
+    for channel_id, session in session_manager.sessions.items():
+        channel = bot.get_channel(channel_id)
+        channel_name = channel.mention if channel else f"ID: {channel_id}"
+        msg += f"- **Channel**: {channel_name} | **Command**: `{session['command']}`\n"
+    
+    await ctx.send(msg)
 
 # --- End BAD Integration ---
 
@@ -675,6 +791,130 @@ async def setup_architect(ctx, channel_name: str = "mission-control"):
         )
     except Exception as e:
         await ctx.send(f"❌ Error creating channel: {e}")
+
+# --- Manager Dashboard ---
+
+class DashboardView(discord.ui.View):
+    def __init__(self, ctx):
+        super().__init__(timeout=None)
+        self.ctx = ctx
+
+    @discord.ui.button(label="Refresh", style=discord.ButtonStyle.primary, emoji="🔄")
+    async def refresh_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        embed = create_dashboard_embed()
+        await interaction.message.edit(embed=embed, view=self)
+
+    @discord.ui.button(label="Approve All Pending", style=discord.ButtonStyle.success, emoji="✅")
+    async def approve_all_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Specific permission check for dangerous actions
+        if interaction.user.id != ADMIN_USER_ID:
+            await interaction.response.send_message("⛔ Only the Admin can block-approve.", ephemeral=True)
+            return
+
+        if not pending_plans:
+            await interaction.response.send_message("No pending plans to approve.", ephemeral=True)
+            return
+
+        await interaction.response.send_message(f"🚀 Approving {len(pending_plans)} plans...", ephemeral=True)
+        
+        # We need to copy keys to avoid runtime error during iteration if size changes
+        plan_ids = list(pending_plans.keys())
+        
+        for msg_id in plan_ids:
+            if msg_id not in pending_plans: continue
+            plan = pending_plans[msg_id]
+            
+            # Execute actions (Reusing logic from on_reaction_add - ideally should be refactored to a function)
+            plan['status'] = "executing"
+            
+            # Log to channel that we are auto-executing
+            # We try to fetch the original message to reply to it, but it might be old
+            # So we just post to the interaction channel (which should be the dashboard channel)
+            await self.ctx.send(f"🤖 **Batch Executing Plan {msg_id}**")
+            
+            for action_str in plan['actions']:
+                # ... (Execution Logic Duplicated for safety/speed, or call helper)
+                # For robustness in this prompt, I will call run_script directly
+                parts = action_str.split()
+                action_name = parts[0]
+                args = parts[1:] if len(parts) > 1 else []
+                
+                await self.ctx.send(f"🔄 Running **{action_name}** {args}...")
+                res = await run_script(action_name, args)
+                await self.ctx.send(res)
+            
+            del pending_plans[msg_id]
+
+        # Refresh dashboard
+        embed = create_dashboard_embed()
+        await interaction.message.edit(embed=embed, view=self)
+
+    @discord.ui.button(label="Kill All Sessions", style=discord.ButtonStyle.danger, emoji="🛑")
+    async def kill_all_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != ADMIN_USER_ID:
+            await interaction.response.send_message("⛔ Access Denied.", ephemeral=True)
+            return
+
+        if not session_manager.sessions:
+            await interaction.response.send_message("No active sessions.", ephemeral=True)
+            return
+
+        count = len(session_manager.sessions)
+        await interaction.response.send_message(f"🛑 Terminating {count} sessions...", ephemeral=True)
+        
+        channel_ids = list(session_manager.sessions.keys())
+        for cid in channel_ids:
+            await session_manager.terminate_session(cid)
+            await self.ctx.send(f"💀 Session in <#{cid}> terminated via Dashboard.")
+
+        # Refresh dashboard
+        embed = create_dashboard_embed()
+        await interaction.message.edit(embed=embed, view=self)
+
+def create_dashboard_embed():
+    embed = discord.Embed(title="📱 B.A.D. Manager Portal", color=discord.Color.dark_theme())
+    
+    # 1. Active Sessions
+    if session_manager.sessions:
+        sessions_text = ""
+        for cid, sess in session_manager.sessions.items():
+            sessions_text += f"• <#{cid}>: `{sess['command']}`\n"
+    else:
+        sessions_text = "*No active agent sessions.*"
+    embed.add_field(name="running_processes", value=sessions_text, inline=False)
+
+    # 2. Pending Blockers
+    if pending_plans:
+        blockers_text = ""
+        for mid, plan in pending_plans.items():
+            actions = ", ".join(plan['actions'])
+            blockers_text += f"• ⚠️ **Plan {mid}**: `{actions}`\n"
+    else:
+        blockers_text = "✅ *All clear. No blockers.*"
+    embed.add_field(name="pending_approvals", value=blockers_text, inline=False)
+    
+    # 3. System Status
+    heartbeat = "Unknown"
+    if os.path.exists(HEARTBEAT_FILE):
+        try:
+            with open(HEARTBEAT_FILE, 'r') as f:
+                data = json.load(f)
+                ts = data.get("timestamp", 0)
+                heartbeat = f"<t:{int(ts)}:R>"
+        except: pass
+        
+    embed.add_field(name="system_health", value=f"Last Heartbeat: {heartbeat}\nLatency: {bot.latency*1000:.0f}ms", inline=False)
+    embed.set_footer(text=f"Updated: {datetime.datetime.now().strftime('%H:%M:%S')}")
+    return embed
+
+@bot.command(name='dashboard')
+@authorized_only()
+async def dashboard_cmd(ctx):
+    """Opens the interactive Manager Dashboard."""
+    embed = create_dashboard_embed()
+    view = DashboardView(ctx)
+    await ctx.send(embed=embed, view=view)
 
 # Run the bot
 if __name__ == "__main__":
