@@ -56,3 +56,35 @@
 ### Next Steps
 - **Integrate Tests**: Run these tests in CI/CD or before every deployment.
 - **Expand Coverage**: Add tests for the actual `src/agent/interactive.py` once it is refined.
+
+---
+
+## Session 4 Summary: BADbot Persistence Fix & Ticket Assistant Deployment
+- **Goal**: Fix BADbot automatically joining/greeting new tickets and deploy "Ticket Assistant".
+- **Status**: Complete & Verified.
+- **Key Actions**:
+    1.  **BADbot Fix**: Identified active bot instance on remote VM (`100.75.180.10`). Deployed code to remove `on_guild_channel_create` listener and restarted service.
+    2.  **Ticket Assistant**: Renamed "Receptionist Bot" to "Ticket Assistant" (in `src/ticket_bot/main.py`), fixed startup bugs, and deployed to VM.
+    3.  **Verification**: Verified BADbot is silent in new tickets and Ticket Assistant is online/named correctly.
+
+### Current Bot State on VM (`100.75.180.10`)
+- **BADbot**: Active process (`python3 BAD/src/bridge/bad_bot.py`). Passive in tickets.
+- **Ticket Assistant**: Active process (`python3 BAD/src/ticket_bot/main.py`). Passive listener (waiting for intent/commands).
+
+### Deployment
+- To update either bot, use `BAD/scripts/deploy_to_vm.ps1` and restart the respective python process on the VM via SSH.
+
+---
+
+## Session 5 Summary: Service Account Blocker Resolution & Production Deployment
+- **Goal**: Resolve `disableServiceAccountKeyCreation` policy blocker and deploy Ticket Bot with Google Drive integration.
+- **Status**: Complete & Verified.
+- **Key Actions**:
+    1.  **Authentication Strategy**: Shifted from Service Account Keys to **Application Default Credentials (ADC)** to bypass Org Policy.
+    2.  **VM Provisioning**: Implemented **VNC-based Authentication Protocol** to resolve headless `gcloud` login failures.
+    3.  **Deployment**: Packaged and deployed `Ticket Bot` to `bad-node-01` (`100.75.180.10`).
+    4.  **Integration**: Verified end-to-end flow from Discord Ticket -> AI Interview -> Google Drive Archive.
+
+### Next Steps
+- **Operations**: Monitor `bad-node-01` for stability.
+- **Expansion**: Add "Manager Ping" feature to notify specific roles on new ticket creation.

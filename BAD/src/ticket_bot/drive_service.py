@@ -1,3 +1,4 @@
+import google.auth
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
@@ -5,20 +6,29 @@ import os
 import datetime
 
 class DriveService:
-    def __init__(self, service_account_json_path):
+    def __init__(self, service_account_json_path=None):
         self.scopes = ['https://www.googleapis.com/auth/drive.file']
-        try:
-            if not os.path.exists(service_account_json_path):
-                print(f"⚠️ Warning: Service Account JSON not found at {service_account_json_path}")
-                self.service = None
+        self.service = None
+        
+        # Try Service Account File first if provided and exists
+        if service_account_json_path and os.path.exists(service_account_json_path):
+            try:
+                self.creds = service_account.Credentials.from_service_account_file(
+                    service_account_json_path, scopes=self.scopes)
+                self.service = build('drive', 'v3', credentials=self.creds)
+                print("✅ Authenticated via Service Account File.")
                 return
-                
-            self.creds = service_account.Credentials.from_service_account_file(
-                service_account_json_path, scopes=self.scopes)
+            except Exception as e:
+                print(f"⚠️ Service Account File failed: {e}")
+
+        # Fallback to Application Default Credentials (ADC)
+        try:
+            print("🔄 Attempting Application Default Credentials (ADC)...")
+            self.creds, project = google.auth.default(scopes=self.scopes)
             self.service = build('drive', 'v3', credentials=self.creds)
-            print("✅ Google Drive Service Authenticated.")
+            print("✅ Authenticated via ADC.")
         except Exception as e:
-            print(f"❌ Failed to authenticate Drive Service: {e}")
+            print(f"❌ Failed to authenticate Drive Service (both File and ADC failed): {e}")
             self.service = None
 
     def create_folder(self, folder_name, parent_id=None):

@@ -30,6 +30,8 @@ class TicketView(discord.ui.View):
 
 class TicketBot(commands.Bot):
     def __init__(self):
+        intents = discord.Intents.default()
+        intents.message_content = True
         super().__init__(command_prefix='!', intents=intents)
         self.db = DatabaseManager()
         self.categories = {
@@ -46,9 +48,26 @@ class TicketBot(commands.Bot):
 
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
+        try:
+            await self.user.edit(username="Ticket Assistant")
+        except Exception as e:
+            print(f"Failed to update username: {e}")
         await self.ensure_categories()
 
-    # ... ensure_categories ...
+    async def ensure_categories(self):
+        """Ensures that the necessary categories exist in the guild."""
+        for guild in self.guilds:
+            for key, name in self.categories.items():
+                category = discord.utils.get(guild.categories, name=name)
+                if not category:
+                    try:
+                        category = await guild.create_category(name)
+                        print(f"Created category: {name}")
+                    except Exception as e:
+                        print(f"Failed to create category {name}: {e}")
+                
+                if category:
+                    self.category_cache[key] = category
 
     async def create_ticket_channel(self, user):
         """Creates a private channel for the user to start the interview."""
@@ -68,7 +87,7 @@ class TicketBot(commands.Bot):
         self.db.create_ticket(channel.id, channel.id, user.id, user.name)
         
         # Send greeting
-        await channel.send(f"Hello {user.mention}! I'm the Support Bot. Please describe your issue briefly.")
+        await channel.send(f"Hello {user.mention}! I'm the **Ticket Assistant**. Please describe your issue briefly.")
         return channel
 
 bot = TicketBot()
@@ -142,6 +161,7 @@ async def close(ctx, *, note: str = "No closing note provided."):
     await ctx.send(f"🗄️ Ticket Closed.\nNote: {note}\nArchive: {drive_link}")
 
 if __name__ == '__main__':
+    TOKEN = os.getenv('DISCORD_TOKEN')
     if not TOKEN:
         print("Error: DISCORD_TOKEN not found in .env")
     else:

@@ -29,4 +29,4 @@ scp -i $KEY_PATH -o StrictHostKeyChecking=no "$LOCAL_ROOT\.env" "${VM_USER}@${VM
 
 Write-Host "Deployment Complete."
 Write-Host "Installing dependencies..."
-ssh -i $KEY_PATH -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" "pip3 install discord.py PyGithub python-dotenv google-generativeai"
+ssh -i $KEY_PATH -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" "pip3 install discord.py PyGithub python-dotenv google-generativeai google-api-python-client"
