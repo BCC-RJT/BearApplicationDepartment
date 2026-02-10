@@ -25,4 +25,5 @@ class ProjectManager(commands.Cog):
         pass
 
 async def setup(bot):
+    print("DEBUG: Loading ProjectManager cog from modified file...")
     await bot.add_cog(ProjectManager(bot))

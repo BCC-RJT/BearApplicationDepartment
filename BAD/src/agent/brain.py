@@ -6,7 +6,23 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+# robustly find .env relative to this script (src/agent/brain.py -> ../../.env)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Try loading from multiple potential locations
+env_paths = [
+    os.path.join(current_dir, '..', '..', '.env'),      # BAD/.env
+    os.path.join(current_dir, '..', '..', '..', '.env') # Project Root .env
+]
+
+for path in env_paths:
+    if os.path.exists(path):
+        load_dotenv(path)
+
+# Fallback: check CWD
+if not os.getenv('GOOGLE_API_KEY'):
+    load_dotenv()
+
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 class AgentBrain:
@@ -255,11 +271,30 @@ RESPONSE FORMAT (JSON ONLY):
                     )
                 )
                 
-                text = response.text
+                # Inspect response before accessing text
+                if not response.candidates:
+                    raise ValueError("No candidates in response")
+                
+                candidate = response.candidates[0]
+                if candidate.finish_reason != 1: # 1 = STOP
+                     print(f"DEBUG: Finish reason: {candidate.finish_reason}")
+                     print(f"DEBUG: Safety ratings: {candidate.safety_ratings}")
+
+                try:
+                    text = response.text
+                except Exception as e:
+                    print(f"DEBUG: response.text failed: {e}")
+                    # Try to access parts directly
+                    if candidate.content and candidate.content.parts:
+                        text = candidate.content.parts[0].text
+                    else:
+                        print(f"DEBUG: Candidate content: {candidate.content}")
+                        raise ValueError(f"Empty content in response. Finish reason: {candidate.finish_reason}")
+
                 print(f"DEBUG: RAW MODEL RESPONSE:\n{text}")
                 
                 if not text:
-                    raise ValueError("Empty response from Gemini API")
+                    raise ValueError("Empty response text from Gemini API")
                 
                 # Robust JSON Extraction
                 parsed_json = self._extract_json(text)
@@ -288,12 +323,6 @@ RESPONSE FORMAT (JSON ONLY):
             # Use a model that supports JSON mode well
             self.model_name = 'gemini-2.0-flash'
 
-    def load_memory(self):
-        memory_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'config', 'memory.json')
-        if os.path.exists(memory_path):
-            with open(memory_path, 'r') as f:
-                return f.read()
-        return "{}"
 
     def save_memory(self, content):
         """Saves content to the long-term memory file, merging with existing data."""
@@ -564,7 +593,7 @@ RESPONSE FORMAT (JSON ONLY):
                 if not text:
                     print(f"DEBUG: Empty response. Candidates: {response.candidates}")
                     if response.candidates:
-                         print(f"DEBUG: Finish reason: {response.candidates[0].finish_reason}")
+                            print(f"DEBUG: Finish reason: {response.candidates[0].finish_reason}")
                     raise ValueError("Empty response from Gemini API")
                 
                 # Robust JSON Extraction

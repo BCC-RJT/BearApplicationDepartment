@@ -29,7 +29,7 @@ ADMIN_USER_ID = int(os.getenv('DISCORD_ALLOWED_USER_ID', '0'))
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True # Required for guild cache
-# intents.members = True # Required to see members in channels (Disabled to allow startup without Privileged Intents)
+intents.members = True # Required to see members in channels
 bot = commands.Bot(command_prefix='?', intents=intents)
 
 # Integrate Agent Brain
@@ -246,6 +246,7 @@ async def on_ready():
         check_ticket_panel.start()
 
     sys.stdout.flush()
+        print("Architect Bot: on_ready triggered")
 
 @bot.command(name='setup_tickets')
 async def setup_tickets(ctx):
@@ -351,6 +352,13 @@ async def ticket_close(ctx):
     except Exception as e:
         await ctx.send(f"❌ Failed to close ticket: {e}")
 
+=======
+# Listener removed to prevent potential conflicts
+@bot.event
+async def on_guild_channel_create(channel):
+        print(f"Architect Bot: New channel detected: {channel.name} (ID: {channel.id})")
+        sys.stdout.flush()
+>>>>>>> origin/main
 
 # Tools
 def read_file(path_arg):
