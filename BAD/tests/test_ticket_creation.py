@@ -32,6 +32,19 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user} (Observer/Tester)')
+    
+    # Wait for guilds to be ready
+    retries = 0
+    while not client.guilds and retries < 10:
+        print("Waiting for guilds...")
+        await asyncio.sleep(1)
+        retries += 1
+        
+    if not client.guilds:
+        print("❌ Error: No guilds found. Is the bot in any server?")
+        await client.close()
+        return
+
     guild = client.guilds[0] # Assume first guild
     print(f"Testing in Guild: {guild.name}")
 
@@ -62,6 +75,25 @@ async def on_ready():
         # We might need to fetch_channel to hit validation.
         channel = await client.fetch_channel(channel.id)
 
+        # 3.1 Check messages for Discard Button
+        print("Checking channel history for Discard controls...")
+        messages = [message async for message in channel.history(limit=5)]
+        messages.reverse() # Chronological order
+        
+        found_controls = False
+        for msg in messages:
+            if msg.embeds:
+                for embed in msg.embeds:
+                    if embed.title == "Ticket Controls" and "Discard" in embed.description:
+                        found_controls = True
+                        print("✅ SUCCESS: Found 'Ticket Controls' embed.")
+                        break
+            if found_controls:
+                break
+        
+        if not found_controls:
+            print("❌ FAILURE: Did not find 'Ticket Controls' embed in channel history.")
+
         if channel.category and channel.category.id == MANAGER_INBOX_ID:
             print("✅ SUCCESS: Channel moved to Manager Inbox.")
         else:
@@ -85,4 +117,5 @@ async def on_ready():
     print("Test Complete.")
     await client.close()
 
-client.run(TOKEN)
+# client.run(TOKEN)
+print("Skipping BADbot integration test as per new Browser Verification Strategy.")

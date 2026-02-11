@@ -125,6 +125,18 @@ class InterviewView(discord.ui.View):
         super().__init__(timeout=None)
         # Keeping this for backward compatibility if needed, using ProposalView for new flow
 
+class NewTicketView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🗑️ Discard Ticket", style=discord.ButtonStyle.danger, custom_id="ticket_assistant:discard_new")
+    async def discard_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("🗑️ Discarding ticket...", ephemeral=True)
+        try:
+            await interaction.channel.delete()
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error discarding ticket: {e}", ephemeral=True)
+
 class TicketView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None) 
@@ -150,11 +162,12 @@ class TicketView(discord.ui.View):
             # Start Conversation
             if conversation_manager:
                 conversation_manager.start_new_conversation(channel.id)
-                # We let the bot logic generate the greeting based on the new system prompt
-                # But we trigger it by simulating a join event or just having the bot speak first?
-                # Actually, the brain needs a trigger. Let's force a "hello" from the bot.
+                
+                # [NEW] Send Control Panel + Greeting Atomic
                 greeting = "Hello! I am your Ticket Assistant. How can I help you today?"
-                await channel.send(greeting)
+                embed = discord.Embed(title="Ticket Controls", description="Use the button below to discard this ticket if created by mistake.", color=discord.Color.red())
+                
+                await channel.send(content=greeting, embed=embed, view=NewTicketView())
                 conversation_manager.add_bot_message(channel.id, greeting)
             
             # Delete the "Thinking..." / "Creating..." message so it doesn't linger
@@ -250,6 +263,7 @@ async def on_ready():
     
     # Register Persistent Views
     bot.add_view(TicketView())
+    bot.add_view(NewTicketView())
     bot.add_view(ProposalView("", "", "")) # Register class, arguments don't matter for persistence check
     print(f'   Ticket Views Registered.')
 
