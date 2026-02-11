@@ -240,6 +240,27 @@ async def process_guild_tickets(guild):
                     panel_exists = True
                     break
             
+            # Enforce Permissions (Always)
+            bot_member = guild.me
+            if not bot_member:
+                try:
+                    bot_member = await guild.fetch_member(bot.user.id)
+                except Exception as e:
+                    print(f"   ⚠️ Could not fetch bot member: {e}")
+                    return
+
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(send_messages=False),
+                bot_member: discord.PermissionOverwrite(send_messages=True)
+            }
+            # Only update if current overwrites differ (to save API calls) - simplified: just update
+            # But await channel.edit might be rate limited if called too often.
+            # Let's check if it matches first? 
+            # For now, just applying it is safer to ensure it sticks.
+            if channel.overwrites_for(guild.default_role).send_messages is not False:
+                 print(f"🔒 Locking down #{channel.name} permissions...")
+                 await channel.edit(overwrites=overwrites)
+
             if not panel_exists:
                 print(f"📦 Auto-Deploying Ticket Panel to #{channel.name} in {guild.name}")
                 embed = discord.Embed(
@@ -288,6 +309,13 @@ async def setup_tickets(ctx):
         description="Click the button below to open a private ticket with the staff.",
         color=discord.Color.blue()
     )
+    # Lock down channel permissions
+    overwrites = {
+        ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False),
+        ctx.guild.me: discord.PermissionOverwrite(send_messages=True)
+    }
+    await ctx.channel.edit(overwrites=overwrites)
+
     await ctx.send(embed=embed, view=TicketView())
     await ctx.message.delete() # cleanup command
 
