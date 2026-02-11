@@ -65,3 +65,22 @@ class ConversationManager:
             logger.info(f"Closed conversation {old_conversation['id']} for channel {channel_id}")
             return True
         return False
+
+    def delete_conversation(self, channel_id, conversation_id=None):
+        """
+        Deletes a conversation.
+        If conversation_id is provided, deletes that specific conversation.
+        If only channel_id is provided, deletes the active conversation for that channel.
+        """
+        if conversation_id:
+            db.delete_conversation(conversation_id)
+            logger.info(f"Deleted conversation {conversation_id}")
+            return True
+            
+        conversation = db.get_active_conversation(channel_id)
+        if conversation:
+            db.delete_conversation(conversation['id'])
+            logger.info(f"Deleted active conversation {conversation['id']} for channel {channel_id}")
+            return True
+            
+        return False

@@ -4,8 +4,8 @@
 
 $VM_USER = "Headsprung"
 $VM_IP = "100.75.180.10"
-$LOCAL_ROOT = "c:\Users\Headsprung\Documents\projects\BearApplicationDepartment"
-$KEY_PATH = "c:\Users\Headsprung\.ssh\google_compute_engine"
+$LOCAL_ROOT = "c:\Users\Controller\Documents\projects\BearApplicationDepartment"
+$KEY_PATH = "c:\Users\Controller\.ssh\google_compute_engine"
 $TarFile = "bad_deploy.tar"
 
 if (-not (Test-Path $TarFile)) {

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "ticket_id": 20,
+    "channel_id": 1471262197530230794,
+    "channel_name": "ticket-20-rtmoney",
+    "archived_at": "2026-02-11 15:54:10",
+    "title": null,
+    "description": null
+  },
+  "messages": [
+    {
+      "id": 1471262198348255406,
+      "timestamp": "2026-02-11 21:50:42",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471262199220539548,
+      "timestamp": "2026-02-11 21:50:43",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hey <@523258559337594880>! I'm your Ticket Assistant. I'm here to help get this sorted for you.",
+      "attachments": []
+    },
+    {
+      "id": 1471262200223109234,
+      "timestamp": "2026-02-11 21:50:43",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "So, what's going on? In a few words, just tell me what the issue is, what you're expecting to happen, and when you need this done by.",
+      "attachments": []
+    },
+    {
+      "id": 1471262749026942976,
+      "timestamp": "2026-02-11 21:52:54",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!help",
+      "attachments": []
+    },
+    {
+      "id": 1471262771864670483,
+      "timestamp": "2026-02-11 21:52:59",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!command",
+      "attachments": []
+    },
+    {
+      "id": 1471262794027368722,
+      "timestamp": "2026-02-11 21:53:04",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!commands",
+      "attachments": []
+    },
+    {
+      "id": 1471262807629627707,
+      "timestamp": "2026-02-11 21:53:08",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "hello",
+      "attachments": []
+    },
+    {
+      "id": 1471262813811900446,
+      "timestamp": "2026-02-11 21:53:09",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hi there! Welcome to the Bear Application Department's support. How can I help you today?",
+      "attachments": []
+    },
+    {
+      "id": 1471263077709119692,
+      "timestamp": "2026-02-11 21:54:12",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!close",
+      "attachments": []
+    },
+    {
+      "id": 1471263078762025033,
+      "timestamp": "2026-02-11 21:54:12",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🔒 Closing ticket...",
+      "attachments": []
+    }
+  ]
+}

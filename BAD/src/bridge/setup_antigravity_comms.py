@@ -21,7 +21,7 @@ if not os.path.exists(ENV_PATH):
 print(f"Loading .env from: {ENV_PATH}")
 load_dotenv(ENV_PATH)
 
-TOKEN = os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv('ARCHITECT_TOKEN') or os.getenv('DISCORD_TOKEN')
 GUILD_ID = None # Optional: Set if bot is in multiple guilds, otherwise it picks the first one
 
 if not TOKEN:

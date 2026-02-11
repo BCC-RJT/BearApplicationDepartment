@@ -93,6 +93,12 @@ def main():
     parser_comment.add_argument('id', help='Issue Number')
     parser_comment.add_argument('body', help='Comment Body')
 
+    # Create
+    parser_create = subparsers.add_parser('create', help='Create a new issue')
+    parser_create.add_argument('title', help='Issue Title')
+    parser_create.add_argument('body', help='Issue Body')
+    parser_create.add_argument('--labels', nargs='+', default=['triage'], help='Labels (default: triage)')
+
     args = parser.parse_args()
 
     if args.command == 'list':

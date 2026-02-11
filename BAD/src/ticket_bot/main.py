@@ -35,7 +35,7 @@ class TicketBot(commands.Bot):
         super().__init__(command_prefix='!', intents=intents)
         self.db = DatabaseManager()
         self.categories = {
-            "manager": "📨 Manager Inbox",
+            "manager": "Ticket Inbox",
             "active": "⚡ Active Tickets",
             "blocked": "⛔ Blocked / Escalated",
             "closed": "🗄️ Closed Archives"

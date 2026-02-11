@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "ticket_id": 12,
+    "channel_id": 1471232056775282899,
+    "channel_name": "ticket-12-bcc_conferenceroom",
+    "archived_at": "2026-02-11 14:12:59",
+    "title": null,
+    "description": null
+  },
+  "messages": [
+    {
+      "id": 1471232058494812302,
+      "timestamp": "2026-02-11 19:50:56",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471232059547848933,
+      "timestamp": "2026-02-11 19:50:57",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hey <@1294309658256867419>! I'm your Ticket Assistant. I'm here to help get this sorted for you.",
+      "attachments": []
+    },
+    {
+      "id": 1471232060835496210,
+      "timestamp": "2026-02-11 19:50:57",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "So, what's going on? In a few words, just tell me what the issue is, what you're expecting to happen, and when you need this done by.",
+      "attachments": []
+    },
+    {
+      "id": 1471232129089277996,
+      "timestamp": "2026-02-11 19:51:13",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🏚️ Ticket abandoned and moved to archives.",
+      "attachments": []
+    },
+    {
+      "id": 1471237501573267667,
+      "timestamp": "2026-02-11 20:12:34",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "✅ Ticket restored to active duty.",
+      "attachments": []
+    },
+    {
+      "id": 1471237526596354210,
+      "timestamp": "2026-02-11 20:12:40",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!delete",
+      "attachments": []
+    },
+    {
+      "id": 1471237594841874432,
+      "timestamp": "2026-02-11 20:12:56",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!help",
+      "attachments": []
+    },
+    {
+      "id": 1471237595525681194,
+      "timestamp": "2026-02-11 20:12:57",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471237613527761027,
+      "timestamp": "2026-02-11 20:13:01",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!close",
+      "attachments": []
+    },
+    {
+      "id": 1471237614324420775,
+      "timestamp": "2026-02-11 20:13:01",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🔒 Closing ticket...",
+      "attachments": []
+    }
+  ]
+}

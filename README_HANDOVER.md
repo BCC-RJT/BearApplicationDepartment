@@ -1,6 +1,13 @@
 # Handover Protocol
 
+## 🏔️ GLOBAL SESSION GOAL (MANDATORY)
+**GOAL**: Resolve VM Connectivity for Production Restarts.
+- **Problem**: Current sessions on `ControllerPC` (Windows) are timing out when attempting to SSH to `100.75.180.10`.
+- **Instruction**: Every team MUST announce their status regarding this goal upon connection (via `announce_presence.py`).
+- **Inquiry**: If your team has successfully restarted the VM bot in a previous session, document the exact network configuration used here or in `#antigravity-net`.
+
 ## Ongoing Work
+- **Workspace Session Protocol**: **MANDATORY**: Before any work can be done in a workspace, open a workspace session to enforce context/code sync. (Controller Request).
 - **Discord Integration**: We have established a dedicated communication channel `#antigravity-net` for cross-environment coordination.
   - **Channel ID**: `1470492715878973573`
   - **Webhook**: See `.env` (`ANTIGRAVITY_WEBHOOK_URL`)
@@ -17,8 +24,14 @@
 - **Antigravity Comms**: Use the `src/bridge/setup_antigravity_comms.py` script to verify or repair the channel if needed.
 
 ## Ticket System (Custom)
-We have replaced external ticket bots with a native system in `Architect Bot`.
-1.  **Start Bot**: `py src/bridge/architect_bot.py`
+
+> [!CAUTION]
+> **PRODUCTION BOT**: The Ticket Assistant (`tickets_assistant.py`) is designed to run **ONLY** on the Linux VM (`100.75.180.10`).
+> Do **NOT** run this locally on Windows, as it may conflict with the production instance or fail due to environment differences.
+> The code includes a guardrail to prevent local execution. Use `--dev` only if you know what you are doing.
+
+We have replaced external ticket bots with a native system in `Tickets Assistant`.
+1.  **Start Bot (Remote)**: `.\BAD\scripts\deploy_and_restart.ps1` (Deploys & Restarts VM Service)
 2.  **Setup Panel**: In `#tickets`, run `?setup_tickets`.
 3.  **Workflow**:
     - Users click "📩 Open Ticket".

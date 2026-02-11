@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "ticket_id": 14,
+    "channel_id": 1471232198546948097,
+    "channel_name": "ticket-14-bcc_conferenceroom",
+    "archived_at": "2026-02-11 14:14:06",
+    "title": "Invoice Copy for Job XYZ from Vendor ABS",
+    "description": "Request copy of invoice for job xyz from vendor abs. Needed today."
+  },
+  "messages": [
+    {
+      "id": 1471232199805239469,
+      "timestamp": "2026-02-11 19:51:30",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471232201055010992,
+      "timestamp": "2026-02-11 19:51:30",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hey <@1294309658256867419>! I'm your Ticket Assistant. I'm here to help get this sorted for you.",
+      "attachments": []
+    },
+    {
+      "id": 1471232202049061169,
+      "timestamp": "2026-02-11 19:51:31",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "So, what's going on? In a few words, just tell me what the issue is, what you're expecting to happen, and when you need this done by.",
+      "attachments": []
+    },
+    {
+      "id": 1471232271112601795,
+      "timestamp": "2026-02-11 19:51:47",
+      "author_id": 1294309658256867419,
+      "author_name": "BCC",
+      "content": "knock",
+      "attachments": []
+    },
+    {
+      "id": 1471232275940376712,
+      "timestamp": "2026-02-11 19:51:48",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hi there! What can I help you with today?",
+      "attachments": []
+    },
+    {
+      "id": 1471232332412354570,
+      "timestamp": "2026-02-11 19:52:02",
+      "author_id": 1294309658256867419,
+      "author_name": "BCC",
+      "content": "I need to see a copy of an invoice",
+      "attachments": []
+    },
+    {
+      "id": 1471232338515071026,
+      "timestamp": "2026-02-11 19:52:03",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Got it. Which invoice are you looking for, and how quickly do you need it? Is it blocking a customer or a critical deadline?",
+      "attachments": []
+    },
+    {
+      "id": 1471232393187823626,
+      "timestamp": "2026-02-11 19:52:16",
+      "author_id": 1294309658256867419,
+      "author_name": "BCC",
+      "content": "the one for job xyz from vendor abs",
+      "attachments": []
+    },
+    {
+      "id": 1471232398854197358,
+      "timestamp": "2026-02-11 19:52:18",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Okay, I can look that up. How quickly do you need this? Is it blocking a customer or critical deadline?",
+      "attachments": []
+    },
+    {
+      "id": 1471232421134340171,
+      "timestamp": "2026-02-11 19:52:23",
+      "author_id": 1294309658256867419,
+      "author_name": "BCC",
+      "content": "I need it today",
+      "attachments": []
+    },
+    {
+      "id": 1471232429057376278,
+      "timestamp": "2026-02-11 19:52:25",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Did we capture it all correctly? Anything you would like to add?\n\nTo help prioritize this request, could you tell me what this is blocking?",
+      "attachments": []
+    },
+    {
+      "id": 1471232452973297665,
+      "timestamp": "2026-02-11 19:52:30",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "📨 **Ticket Created!** @here\nGreat! I've created the ticket for you and added you to our queue. Watch here for progress.\nHave a great afternoon!",
+      "attachments": []
+    },
+    {
+      "id": 1471232589145702602,
+      "timestamp": "2026-02-11 19:53:03",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!assign <@523258559337594880>",
+      "attachments": []
+    },
+    {
+      "id": 1471232590425100394,
+      "timestamp": "2026-02-11 19:53:03",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "✅ <@523258559337594880> has been assigned to this ticket.",
+      "attachments": []
+    },
+    {
+      "id": 1471232767089184921,
+      "timestamp": "2026-02-11 19:53:45",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!blocked",
+      "attachments": []
+    },
+    {
+      "id": 1471232812693717166,
+      "timestamp": "2026-02-11 19:53:56",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!escalate <@523258559337594880>",
+      "attachments": []
+    },
+    {
+      "id": 1471232814459388130,
+      "timestamp": "2026-02-11 19:53:57",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🚨 Ticket escalated to <@523258559337594880>.",
+      "attachments": []
+    },
+    {
+      "id": 1471233441214369865,
+      "timestamp": "2026-02-11 19:56:26",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!adminhelp",
+      "attachments": []
+    },
+    {
+      "id": 1471233441818218509,
+      "timestamp": "2026-02-11 19:56:26",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471233521157800008,
+      "timestamp": "2026-02-11 19:56:45",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!return",
+      "attachments": []
+    },
+    {
+      "id": 1471233521979756691,
+      "timestamp": "2026-02-11 19:56:45",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🔄 Returning ticket to queue...",
+      "attachments": []
+    },
+    {
+      "id": 1471233525196914833,
+      "timestamp": "2026-02-11 19:56:46",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "✅ Ticket returned to Tickets Inbox and unassigned from you.",
+      "attachments": []
+    },
+    {
+      "id": 1471233680910450728,
+      "timestamp": "2026-02-11 19:57:23",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!setup_oncall",
+      "attachments": []
+    },
+    {
+      "id": 1471233681526882518,
+      "timestamp": "2026-02-11 19:57:23",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471233850527973631,
+      "timestamp": "2026-02-11 19:58:04",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!history <@523258559337594880>",
+      "attachments": []
+    },
+    {
+      "id": 1471233851501318248,
+      "timestamp": "2026-02-11 19:58:04",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471233973811413217,
+      "timestamp": "2026-02-11 19:58:33",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!adminhelp",
+      "attachments": []
+    },
+    {
+      "id": 1471233975015178311,
+      "timestamp": "2026-02-11 19:58:33",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471234594123813026,
+      "timestamp": "2026-02-11 20:01:01",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!delete",
+      "attachments": []
+    },
+    {
+      "id": 1471234944977211403,
+      "timestamp": "2026-02-11 20:02:25",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!admin help",
+      "attachments": []
+    },
+    {
+      "id": 1471234980930781276,
+      "timestamp": "2026-02-11 20:02:33",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!adminhelp",
+      "attachments": []
+    },
+    {
+      "id": 1471234981987614795,
+      "timestamp": "2026-02-11 20:02:33",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471235946560356433,
+      "timestamp": "2026-02-11 20:06:23",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471235997256650752,
+      "timestamp": "2026-02-11 20:06:35",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "📢 **Status Update**: We currently have **6** open tickets (6 unassigned).",
+      "attachments": []
+    },
+    {
+      "id": 1471237333629141033,
+      "timestamp": "2026-02-11 20:11:54",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!adminhelp",
+      "attachments": []
+    },
+    {
+      "id": 1471237334908276920,
+      "timestamp": "2026-02-11 20:11:54",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471237380932505611,
+      "timestamp": "2026-02-11 20:12:05",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471237677297696971,
+      "timestamp": "2026-02-11 20:13:16",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471237895854751995,
+      "timestamp": "2026-02-11 20:14:08",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!close",
+      "attachments": []
+    },
+    {
+      "id": 1471237896752074914,
+      "timestamp": "2026-02-11 20:14:08",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🔒 Closing ticket...",
+      "attachments": []
+    }
+  ]
+}

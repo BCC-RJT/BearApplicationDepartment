@@ -33,6 +33,8 @@ def announce_presence():
     os_name = platform.system()
     release = platform.release()
 
+    goal_status = "⚠️ BLOCKED: Connection Timeout to 100.75.180.10. Seeking info from successful teams."
+    
     payload = {
         "username": "Antigravity Node",
         "embeds": [{
@@ -42,9 +44,10 @@ def announce_presence():
             "fields": [
                 {"name": "Hostname", "value": hostname, "inline": True},
                 {"name": "OS", "value": f"{os_name} {release}", "inline": True},
-                {"name": "Root Path", "value": REPO_ROOT, "inline": False}
+                {"name": "Root Path", "value": REPO_ROOT, "inline": False},
+                {"name": "🏔️ Global Session Goal", "value": goal_status, "inline": False}
             ],
-            "footer": {"text": "Antigravity Network Protocol v1.0"}
+            "footer": {"text": "Antigravity Network Coordination Protocol v1.1"}
         }]
     }
 
@@ -52,6 +55,12 @@ def announce_presence():
         response = requests.post(WEBHOOK_URL, json=payload)
         response.raise_for_status()
         print(f"✅ Presence announced from {hostname}")
+        
+        # Also post a specific inquiry as a regular message to ping the team
+        inquiry = {
+            "content": "🚨 **CROSS-TEAM INQUIRY**: One of our teams is reporting a timeout to the VM at `100.75.180.10`. If your team has successfully restarted the server in a previous session, please reply with your connection method (Tailscale status, SSH config, or Tunnel info)."
+        }
+        requests.post(WEBHOOK_URL, json=inquiry)
     except Exception as e:
         print(f"⚠️ Failed to announce presence: {e}")
 

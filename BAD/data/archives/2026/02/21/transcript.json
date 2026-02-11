@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "ticket_id": 21,
+    "channel_id": 1471263415447060694,
+    "channel_name": "ticket-21-rtmoney",
+    "archived_at": "2026-02-11 15:55:59",
+    "title": null,
+    "description": null
+  },
+  "messages": [
+    {
+      "id": 1471263417229902090,
+      "timestamp": "2026-02-11 21:55:33",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "",
+      "attachments": []
+    },
+    {
+      "id": 1471263418114768947,
+      "timestamp": "2026-02-11 21:55:33",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "Hey <@523258559337594880>! I'm your Ticket Assistant. I'm here to help get this sorted for you.",
+      "attachments": []
+    },
+    {
+      "id": 1471263418727141376,
+      "timestamp": "2026-02-11 21:55:33",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "So, what's going on? In a few words, just tell me what the issue is, what you're expecting to happen, and when you need this done by.",
+      "attachments": []
+    },
+    {
+      "id": 1471263533118521479,
+      "timestamp": "2026-02-11 21:56:01",
+      "author_id": 523258559337594880,
+      "author_name": "RTMoney",
+      "content": "!close",
+      "attachments": []
+    },
+    {
+      "id": 1471263533902594189,
+      "timestamp": "2026-02-11 21:56:01",
+      "author_id": 1470100217679577099,
+      "author_name": "Ticket Assistant",
+      "content": "🔒 Closing ticket...",
+      "attachments": []
+    }
+  ]
+}
