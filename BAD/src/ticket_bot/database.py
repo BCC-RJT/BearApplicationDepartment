@@ -82,3 +82,11 @@ class DatabaseManager:
         ''', (datetime.datetime.now(), channel_id))
         conn.commit()
         conn.close()
+
+    def delete_ticket(self, channel_id):
+        """Removes the ticket record completely."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM tickets WHERE channel_id = ?', (channel_id,))
+        conn.commit()
+        conn.close()

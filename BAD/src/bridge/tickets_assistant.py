@@ -523,6 +523,7 @@ class InterviewView(discord.ui.View):
         super().__init__(timeout=None)
         # Keeping this for backward compatibility if needed, using ProposalView for new flow
 
+<<<<<<< HEAD
 class TicketControlView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -637,6 +638,19 @@ class DiscardView(discord.ui.View):
         for child in self.children:
             child.disabled = True
         await interaction.message.edit(view=self)
+=======
+class NewTicketView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🗑️ Discard Ticket", style=discord.ButtonStyle.danger, custom_id="ticket_assistant:discard_new")
+    async def discard_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("🗑️ Discarding ticket...", ephemeral=True)
+        try:
+            await interaction.channel.delete()
+        except Exception as e:
+            await interaction.followup.send(f"❌ Error discarding ticket: {e}", ephemeral=True)
+>>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -702,6 +716,7 @@ class TicketView(discord.ui.View):
             # Start Conversation
             if conversation_manager:
                 conversation_manager.start_new_conversation(channel.id)
+<<<<<<< HEAD
                 # We let the bot logic generate the greeting based on the new system prompt
                 # But we trigger it by simulating a join event or just having the bot speak first?
                 # Actually, the brain needs a trigger. Let's force a "hello" from the bot.
@@ -726,6 +741,15 @@ class TicketView(discord.ui.View):
                 # Record both in conversation history
                 conversation_manager.add_bot_message(channel.id, greeting_part_1)
                 conversation_manager.add_bot_message(channel.id, greeting_part_2)
+=======
+                
+                # [NEW] Send Control Panel + Greeting Atomic
+                greeting = "Hello! I am your Ticket Assistant. How can I help you today?"
+                embed = discord.Embed(title="Ticket Controls", description="Use the button below to discard this ticket if created by mistake.", color=discord.Color.red())
+                
+                await channel.send(content=greeting, embed=embed, view=NewTicketView())
+                conversation_manager.add_bot_message(channel.id, greeting)
+>>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
             
             # Delete the "Thinking..." / "Creating..." message so it doesn't linger
             try:
@@ -812,6 +836,27 @@ async def process_guild_tickets(guild):
                     panel_exists = True
                     break
             
+            # Enforce Permissions (Always)
+            bot_member = guild.me
+            if not bot_member:
+                try:
+                    bot_member = await guild.fetch_member(bot.user.id)
+                except Exception as e:
+                    print(f"   ⚠️ Could not fetch bot member: {e}")
+                    return
+
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(send_messages=False),
+                bot_member: discord.PermissionOverwrite(send_messages=True)
+            }
+            # Only update if current overwrites differ (to save API calls) - simplified: just update
+            # But await channel.edit might be rate limited if called too often.
+            # Let's check if it matches first? 
+            # For now, just applying it is safer to ensure it sticks.
+            if channel.overwrites_for(guild.default_role).send_messages is not False:
+                 print(f"🔒 Locking down #{channel.name} permissions...")
+                 await channel.edit(overwrites=overwrites)
+
             if not panel_exists:
                 print(f"📦 Auto-Deploying Ticket Panel to #{channel.name} in {guild.name}")
                 embed = discord.Embed(
@@ -905,6 +950,7 @@ async def on_ready():
     
     # Register Persistent Views
     bot.add_view(TicketView())
+    bot.add_view(NewTicketView())
     bot.add_view(ProposalView("", "", "")) # Register class, arguments don't matter for persistence check
     bot.add_view(DiscardView())
     bot.add_view(TicketControlView())
@@ -947,6 +993,7 @@ async def setup_tickets_slash(interaction: discord.Interaction):
         description="Click the button below to open a private ticket with the staff.",
         color=discord.Color.blue()
     )
+<<<<<<< HEAD
     await interaction.channel.send(embed=embed, view=TicketView())
     await interaction.response.send_message("✅ Ticket Panel deployed.", ephemeral=True)
 
@@ -994,6 +1041,17 @@ class AssignView(discord.ui.View):
         for child in self.children:
             child.disabled = True
         await interaction.message.edit(view=self)
+=======
+    # Lock down channel permissions
+    overwrites = {
+        ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False),
+        ctx.guild.me: discord.PermissionOverwrite(send_messages=True)
+    }
+    await ctx.channel.edit(overwrites=overwrites)
+
+    await ctx.send(embed=embed, view=TicketView())
+    await ctx.message.delete() # cleanup command
+>>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
 
 @bot.command(name='assign')
 async def assign_ticket(ctx, member: discord.Member = None):

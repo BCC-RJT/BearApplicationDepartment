@@ -5,14 +5,17 @@ from dotenv import load_dotenv
 
 # Load .env
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # BAD
-ENV_PATH = os.path.join(PROJECT_ROOT, '.env')
+REPO_ROOT = os.path.dirname(PROJECT_ROOT)
 
-if not os.path.exists(ENV_PATH):
-    # Try one level up
-    ENV_PATH = os.path.join(os.path.dirname(PROJECT_ROOT), '.env')
-    print(f"⚠️ .env not found in BAD, trying {ENV_PATH}")
+# Try loading from Repo Root first (where token usually is)
+ENV_PATH_REPO = os.path.join(REPO_ROOT, '.env')
+if os.path.exists(ENV_PATH_REPO):
+    load_dotenv(ENV_PATH_REPO)
 
-load_dotenv(ENV_PATH)
+# Then load from BAD to override specific configs
+ENV_PATH_BAD = os.path.join(PROJECT_ROOT, '.env')
+if os.path.exists(ENV_PATH_BAD):
+    load_dotenv(ENV_PATH_BAD)
 
 TOKEN = os.getenv('ARCHITECT_TOKEN') or os.getenv('DISCORD_TOKEN') # Try Architect (Assistant) first
 if not TOKEN:
