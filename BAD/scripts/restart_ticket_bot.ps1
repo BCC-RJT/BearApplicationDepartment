@@ -1,6 +1,6 @@
 
 $procName = "python"
-$scriptName = "src/bridge/tickets_assistant.py"
+$scriptName = "src/ticket_bot/main.py"
 
 # Find process running the bot
 $processes = Get-WmiObject Win32_Process | Where-Object { $_.Name -eq "$procName.exe" -and $_.CommandLine -like "*$scriptName*" }
