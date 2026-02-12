@@ -12,6 +12,15 @@ from collections import deque
 from datetime import datetime, timedelta
 
 # --- Singleton Lock ---
+# --- Singleton Lock ---
+# prevents multiple instances from running
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("127.0.0.1", 45679))
+except socket.error as e:
+    print(f"❌ FATAL: Another instance is already running (Port 45679 locked).")
+    sys.exit(1)
+
 # Moved to __main__ to allow testing imports
 
 # --- Encoding Fix for Windows ---
@@ -23,6 +32,8 @@ if sys.platform == 'win32':
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 REPO_ROOT = os.path.dirname(PROJECT_ROOT)
 ENV_PATH = os.path.join(REPO_ROOT, '.env')
+if not os.path.exists(ENV_PATH):
+    ENV_PATH = os.path.join(PROJECT_ROOT, '.env')
 load_dotenv(ENV_PATH)
 
 # Bot Identity
@@ -523,134 +534,7 @@ class InterviewView(discord.ui.View):
         super().__init__(timeout=None)
         # Keeping this for backward compatibility if needed, using ProposalView for new flow
 
-<<<<<<< HEAD
-class TicketControlView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
 
-    @discord.ui.select(cls=discord.ui.UserSelect, placeholder="Add users to this ticket...", min_values=1, max_values=10, custom_id="ticket_add_users", row=0)
-    async def add_users_select(self, interaction: discord.Interaction, select: discord.ui.UserSelect):
-        # Add users to channel
-        added = []
-        for member in select.values:
-            await interaction.channel.set_permissions(member, read_messages=True, send_messages=True, attach_files=True)
-            added.append(member.display_name)
-        
-        await interaction.response.send_message(f"✅ Added {', '.join(added)} to the ticket.", ephemeral=True)
-        # We don't disable because they might want to add more.
-
-    @discord.ui.button(label="✅ Close Ticket", style=discord.ButtonStyle.success, custom_id="close_ticket_btn", row=1)
-    async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        channel = interaction.channel
-        guild = interaction.guild
-        
-        # 0. Update DB
-        db.update_ticket_status(channel.id, 'closed')
-        
-        # 1. Move to Closed Archives
-        category = guild.get_channel(CLOSED_ARCHIVES_ID)
-        if not category:
-             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
-        if not category:
-             category = discord.utils.get(guild.categories, name="Archives")
-
-        if category:
-            await channel.edit(category=category)
-            await channel.send("✅ Ticket resolved and moved to archives.", view=RestoreView())
-        else:
-            await channel.send("✅ Ticket resolved.", view=RestoreView())
-
-        # 2. Disable buttons
-        for child in self.children:
-            child.disabled = True
-        await interaction.message.edit(view=self)
-
-    @discord.ui.button(label="🏚️ Abandon Ticket", style=discord.ButtonStyle.secondary, custom_id="abandon_ticket_btn", row=1)
-    async def abandon_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        channel = interaction.channel
-        guild = interaction.guild
-        
-        # 0. Update DB
-        db.update_ticket_status(channel.id, 'closed')
-        
-        # 1. Move to Closed Archives
-        category = guild.get_channel(CLOSED_ARCHIVES_ID)
-        if not category:
-             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
-        if not category:
-             category = discord.utils.get(guild.categories, name="Archives")
-
-        if category:
-            await channel.edit(category=category)
-            await channel.send("🏚️ Ticket abandoned and moved to archives.", view=RestoreView())
-        else:
-            await channel.send("🏚️ Ticket abandoned.", view=RestoreView())
-
-        # 2. Disable buttons
-        for child in self.children:
-            child.disabled = True
-        await interaction.message.edit(view=self)
-
-    @discord.ui.button(label="🗑️ Delete Ticket", style=discord.ButtonStyle.danger, custom_id="delete_ticket_btn", row=1)
-    async def delete_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        channel = interaction.channel
-        
-        # 0. Update DB to deleted (so archiver doesn't complain or process it)
-        db.update_ticket_status(channel.id, 'deleted')
-        
-        # 1. Delete Channel
-        await channel.delete(reason=f"Ticket Deleted by {interaction.user.display_name}")
-
-class DiscardView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="🗑️ Discard Ticket", style=discord.ButtonStyle.danger, custom_id="discard_ticket_old") # Changed ID to avoid conflict if both exist
-    async def discard_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        channel = interaction.channel
-        guild = interaction.guild
-        
-        # 0. Update DB
-        db.update_ticket_status(channel.id, 'closed')
-        
-        # 1. Move to Closed Archives
-        category = guild.get_channel(CLOSED_ARCHIVES_ID)
-        if not category:
-             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
-        if not category:
-             category = discord.utils.get(guild.categories, name="Archives") # Fallback
-             
-        if category:
-            await channel.edit(category=category)
-            await channel.send("🗑️ Ticket discarded and moved to archives.")
-        else:
-            await channel.send("🗑️ Ticket discarded. (Archive category not found, so simply closing).")
-            # If no archive, we might still want to delete or just close? 
-            # For consistency with ProposalView, we'll just leave it or maybe delete if that was the original intent?
-            # Original intent was delete, but requirement is "filed under closed archives".
-            # If archive fails, let's just leave it there with the message so it doesn't vanish.
-
-        # 2. Disable buttons
-        for child in self.children:
-            child.disabled = True
-        await interaction.message.edit(view=self)
-=======
-class NewTicketView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="🗑️ Discard Ticket", style=discord.ButtonStyle.danger, custom_id="ticket_assistant:discard_new")
-    async def discard_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("🗑️ Discarding ticket...", ephemeral=True)
-        try:
-            await interaction.channel.delete()
-        except Exception as e:
-            await interaction.followup.send(f"❌ Error discarding ticket: {e}", ephemeral=True)
->>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -716,7 +600,6 @@ class TicketView(discord.ui.View):
             # Start Conversation
             if conversation_manager:
                 conversation_manager.start_new_conversation(channel.id)
-<<<<<<< HEAD
                 # We let the bot logic generate the greeting based on the new system prompt
                 # But we trigger it by simulating a join event or just having the bot speak first?
                 # Actually, the brain needs a trigger. Let's force a "hello" from the bot.
@@ -741,15 +624,6 @@ class TicketView(discord.ui.View):
                 # Record both in conversation history
                 conversation_manager.add_bot_message(channel.id, greeting_part_1)
                 conversation_manager.add_bot_message(channel.id, greeting_part_2)
-=======
-                
-                # [NEW] Send Control Panel + Greeting Atomic
-                greeting = "Hello! I am your Ticket Assistant. How can I help you today?"
-                embed = discord.Embed(title="Ticket Controls", description="Use the button below to discard this ticket if created by mistake.", color=discord.Color.red())
-                
-                await channel.send(content=greeting, embed=embed, view=NewTicketView())
-                conversation_manager.add_bot_message(channel.id, greeting)
->>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
             
             # Delete the "Thinking..." / "Creating..." message so it doesn't linger
             try:
@@ -993,7 +867,13 @@ async def setup_tickets_slash(interaction: discord.Interaction):
         description="Click the button below to open a private ticket with the staff.",
         color=discord.Color.blue()
     )
-<<<<<<< HEAD
+    # Lock down channel permissions
+    overwrites = {
+        interaction.guild.default_role: discord.PermissionOverwrite(send_messages=False),
+        interaction.guild.me: discord.PermissionOverwrite(send_messages=True)
+    }
+    await interaction.channel.edit(overwrites=overwrites)
+
     await interaction.channel.send(embed=embed, view=TicketView())
     await interaction.response.send_message("✅ Ticket Panel deployed.", ephemeral=True)
 
@@ -1041,17 +921,6 @@ class AssignView(discord.ui.View):
         for child in self.children:
             child.disabled = True
         await interaction.message.edit(view=self)
-=======
-    # Lock down channel permissions
-    overwrites = {
-        ctx.guild.default_role: discord.PermissionOverwrite(send_messages=False),
-        ctx.guild.me: discord.PermissionOverwrite(send_messages=True)
-    }
-    await ctx.channel.edit(overwrites=overwrites)
-
-    await ctx.send(embed=embed, view=TicketView())
-    await ctx.message.delete() # cleanup command
->>>>>>> ae830d55283514d59baa005ba4f681a01dc8753f
 
 @bot.command(name='assign')
 async def assign_ticket(ctx, member: discord.Member = None):

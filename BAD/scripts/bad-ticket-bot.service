@@ -1,0 +1,20 @@
+[Unit]
+Description=BAD Ticket Assistant Bot
+After=network.target
+
+[Service]
+Type=simple
+User=Headsprung
+WorkingDirectory=/home/Headsprung/BAD
+ExecStart=/usr/bin/python3 src/bridge/tickets_assistant.py
+Restart=always
+RestartSec=10
+# Environment variables can be loaded from .env if needed, but python-dotenv handles it in code.
+# EnvironmentFile=/home/Headsprung/BAD/.env
+
+# Logging
+StandardOutput=append:/home/Headsprung/logs/ticket_bot.log
+StandardError=append:/home/Headsprung/logs/ticket_bot_error.log
+
+[Install]
+WantedBy=multi-user.target

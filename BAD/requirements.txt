@@ -1,4 +1,6 @@
-discord.py
-python-dotenv
-google-generativeai
+discord.py>=2.3.0
+python-dotenv>=1.0.0
+google-generativeai>=0.3.0
+google-api-python-client>=2.100.0
+PyGithub>=2.1.1
 boto3

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  bad-ticket-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: bad-ticket-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    # Allow passing local timezone
+    environment:
+      - TZ=America/Chicago
+    # Optional network config if needed
+    networks:
+      - bad-network
+
+networks:
+  bad-network:
+    driver: bridge
