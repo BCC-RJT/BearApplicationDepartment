@@ -25,7 +25,12 @@
 
 ## Ticket System (Custom)
 
-> [!CAUTION]
+> [!IMPORTANT]
+> **BOT IDENTITY STANDARDS**:
+> - `Ticket Assistant` -> Uses `TICKET_ASSISTANT_TOKEN` (Prod/Dev)
+> - `Project Planner` -> Uses `PROJECT_PLANNER_TOKEN` (Architect)
+> - `BADbot` -> Uses `BADBOT_TOKEN` (Ops)
+>
 > **PRODUCTION BOT**: The Ticket Assistant (`tickets_assistant.py`) is designed to run **ONLY** on the Linux VM (`100.75.180.10`).
 > Do **NOT** run this locally on Windows, as it may conflict with the production instance or fail due to environment differences.
 > The code includes a guardrail to prevent local execution. Use `--dev` only if you know what you are doing.

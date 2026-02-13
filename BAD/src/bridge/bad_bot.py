@@ -61,7 +61,8 @@ logger = logging.getLogger("BAD_BOT")
 # Load environment variables
 load_dotenv(ENV_PATH)
 
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+# Standardized Token (BADbot)
+DISCORD_TOKEN = os.getenv('BADBOT_TOKEN') or os.getenv('DISCORD_TOKEN')
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 REPO_NAME = os.getenv('REPO_NAME')
 ADMIN_USER_ID = int(os.getenv('DISCORD_ALLOWED_USER_ID', '0'))

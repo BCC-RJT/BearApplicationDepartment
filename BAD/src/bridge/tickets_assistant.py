@@ -37,8 +37,10 @@ if not os.path.exists(ENV_PATH):
 load_dotenv(ENV_PATH)
 
 # Bot Identity
-BOT_NAME = "Tickets Assistant"
-TOKEN = os.getenv('ARCHITECT_TOKEN') or os.getenv('DISCORD_TOKEN')
+BOT_NAME = "Ticket Assistant"
+# PRIORITIZE TICKET_ASSISTANT_TOKEN
+TOKEN = os.getenv('TICKET_ASSISTANT_TOKEN') or os.getenv('DISCORD_TOKEN')
+
 
 # Server Identification (for Multi-Server Archiving)
 SERVER_ID_FLAG = os.getenv('SERVER_ID', 'BAD-MAIN') # Default to BAD-MAIN if not set
@@ -534,7 +536,120 @@ class InterviewView(discord.ui.View):
         super().__init__(timeout=None)
         # Keeping this for backward compatibility if needed, using ProposalView for new flow
 
+class TicketControlView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
 
+    @discord.ui.select(cls=discord.ui.UserSelect, placeholder="Add users to this ticket...", min_values=1, max_values=10, custom_id="ticket_add_users", row=0)
+    async def add_users_select(self, interaction: discord.Interaction, select: discord.ui.UserSelect):
+        # Add users to channel
+        added = []
+        for member in select.values:
+            await interaction.channel.set_permissions(member, read_messages=True, send_messages=True, attach_files=True)
+            added.append(member.display_name)
+        
+        await interaction.response.send_message(f"✅ Added {', '.join(added)} to the ticket.", ephemeral=True)
+        # We don't disable because they might want to add more.
+
+    @discord.ui.button(label="✅ Close Ticket", style=discord.ButtonStyle.success, custom_id="close_ticket_btn", row=1)
+    async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        channel = interaction.channel
+        guild = interaction.guild
+        
+        # 0. Update DB
+        db.update_ticket_status(channel.id, 'closed')
+        
+        # 1. Move to Closed Archives
+        category = guild.get_channel(CLOSED_ARCHIVES_ID)
+        if not category:
+             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
+        if not category:
+             category = discord.utils.get(guild.categories, name="Archives")
+
+        if category:
+            await channel.edit(category=category)
+            await channel.send("✅ Ticket resolved and moved to archives.", view=RestoreView())
+        else:
+            await channel.send("✅ Ticket resolved.", view=RestoreView())
+
+        # 2. Disable buttons
+        for child in self.children:
+            child.disabled = True
+        await interaction.message.edit(view=self)
+
+    @discord.ui.button(label="🏚️ Abandon Ticket", style=discord.ButtonStyle.secondary, custom_id="abandon_ticket_btn", row=1)
+    async def abandon_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        channel = interaction.channel
+        guild = interaction.guild
+        
+        # 0. Update DB
+        db.update_ticket_status(channel.id, 'closed')
+        
+        # 1. Move to Closed Archives
+        category = guild.get_channel(CLOSED_ARCHIVES_ID)
+        if not category:
+             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
+        if not category:
+             category = discord.utils.get(guild.categories, name="Archives")
+
+        if category:
+            await channel.edit(category=category)
+            await channel.send("🏚️ Ticket abandoned and moved to archives.", view=RestoreView())
+        else:
+            await channel.send("🏚️ Ticket abandoned.", view=RestoreView())
+
+        # 2. Disable buttons
+        for child in self.children:
+            child.disabled = True
+        await interaction.message.edit(view=self)
+
+    @discord.ui.button(label="🗑️ Delete Ticket", style=discord.ButtonStyle.danger, custom_id="delete_ticket_btn", row=1)
+    async def delete_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        channel = interaction.channel
+        
+        # 0. Update DB to deleted (so archiver doesn't complain or process it)
+        db.update_ticket_status(channel.id, 'deleted')
+        
+        # 1. Delete Channel
+        await channel.delete(reason=f"Ticket Deleted by {interaction.user.display_name}")
+
+class DiscardView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🗑️ Discard Ticket", style=discord.ButtonStyle.danger, custom_id="discard_ticket_old") # Changed ID to avoid conflict if both exist
+    async def discard_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        channel = interaction.channel
+        guild = interaction.guild
+        
+        # 0. Update DB
+        db.update_ticket_status(channel.id, 'closed')
+        
+        # 1. Move to Closed Archives
+        category = guild.get_channel(CLOSED_ARCHIVES_ID)
+        if not category:
+             category = discord.utils.get(guild.categories, name="🗄️ Closed Archives")
+        if not category:
+             category = discord.utils.get(guild.categories, name="Archives") # Fallback
+             
+        if category:
+            await channel.edit(category=category)
+            await channel.send("🗑️ Ticket discarded and moved to archives.")
+        else:
+            await channel.send("🗑️ Ticket discarded. (Archive category not found, so simply closing).")
+            # If no archive, we might still want to delete or just close? 
+            # For consistency with ProposalView, we'll just leave it or maybe delete if that was the original intent?
+            # Original intent was delete, but requirement is "filed under closed archives".
+            # If archive fails, let's just leave it there with the message so it doesn't vanish.
+
+        # 2. Disable buttons
+        for child in self.children:
+            child.disabled = True
+        await interaction.message.edit(view=self)
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -819,44 +934,60 @@ async def check_and_archive_tickets():
 
 @bot.event
 async def on_ready():
-    print(f'🤖 {bot.user} is online (v2.0 - Active Ticket Workflow)')
-    print(f'   ID: {bot.user.id}')
-    
-    # Register Persistent Views
-    bot.add_view(TicketView())
-    bot.add_view(NewTicketView())
-    bot.add_view(ProposalView("", "", "")) # Register class, arguments don't matter for persistence check
-    bot.add_view(DiscardView())
-    bot.add_view(TicketControlView())
-    bot.add_view(RestoreView())
-    bot.add_view(EscalateView())
-    # bot.add_view(BlockUserView()) # Removed
-
-    bot.add_view(DashboardView())
-    print(f'   Ticket Views Registered.')
-
-    # Sync Slash Commands
     try:
-        synced = await bot.tree.sync()
-        print(f"   Synced {len(synced)} slash commands.")
-    except Exception as e:
-        print(f"   ⚠️ Failed to sync slash commands: {e}")
-
-    # Update Nickname
-    for guild in bot.guilds:
-        try:
-            if guild.me.nick != "Ticket Assistant":
-                print(f"Updating nickname in {guild.name} to 'Ticket Assistant'...")
-                await guild.me.edit(nick="Ticket Assistant")
-        except:
-            pass
-            
-    # Start Background Task
-    if not check_ticket_panel.is_running():
-        check_ticket_panel.start()
+        print(f'🤖 {bot.user} is online (v2.0 - Active Ticket Workflow)')
+        print(f'   ID: {bot.user.id}')
         
-    if not check_and_archive_tickets.is_running():
-        check_and_archive_tickets.start()
+        # Register Persistent Views
+        bot.add_view(TicketView())
+        # bot.add_view(NewTicketView()) # Removed conflicting view
+        bot.add_view(ProposalView("", "", "")) # Register class, arguments don't matter for persistence check
+        bot.add_view(DiscardView())
+        bot.add_view(TicketControlView())
+        bot.add_view(RestoreView())
+        bot.add_view(EscalateView())
+        # bot.add_view(BlockUserView()) # Removed
+
+        bot.add_view(DashboardView())
+        bot.add_view(DashboardView())
+        print(f'   Ticket Views Registered.')
+
+        # Load Cogs (Uplink, etc.)
+        try:
+            # Check if extension is already loaded to check re-connects
+            if "src.bridge.cogs.uplink" not in bot.extensions:
+                await bot.load_extension("src.bridge.cogs.uplink")
+                print("✅ Uplink Cog Loaded.")
+        except Exception as e:
+            print(f"⚠️ Uplink Load Failed: {e}")
+
+        # Sync Slash Commands
+        try:
+            synced = await bot.tree.sync()
+            print(f"   Synced {len(synced)} slash commands.")
+        except Exception as e:
+            print(f"   ⚠️ Failed to sync slash commands: {e}")
+
+        # Update Nickname - DISABLED to prevent Identity Identity Theft
+    # for guild in bot.guilds:
+    #     try:
+    #         if guild.me.nick != "Ticket Assistant":
+    #             print(f"Updating nickname in {guild.name} to 'Ticket Assistant'...")
+    #             await guild.me.edit(nick="Ticket Assistant")
+    #     except:
+    #         pass
+                
+        # Start Background Task
+        if not check_ticket_panel.is_running():
+            check_ticket_panel.start()
+            
+        if not check_and_archive_tickets.is_running():
+            check_and_archive_tickets.start()
+
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in on_ready: {e}")
+        import traceback
+        traceback.print_exc()
 
 @bot.tree.command(name='setup_tickets', description="Deploys the Ticket Creation Panel (Admin).")
 @commands.has_permissions(administrator=True)
@@ -873,7 +1004,6 @@ async def setup_tickets_slash(interaction: discord.Interaction):
         interaction.guild.me: discord.PermissionOverwrite(send_messages=True)
     }
     await interaction.channel.edit(overwrites=overwrites)
-
     await interaction.channel.send(embed=embed, view=TicketView())
     await interaction.response.send_message("✅ Ticket Panel deployed.", ephemeral=True)
 
@@ -1531,8 +1661,8 @@ async def commands_slash(interaction: discord.Interaction):
 
 @bot.event
 async def on_message(message):
-    # Ignore bot's own messages
-    if message.author == bot.user:
+    # Ignore ALL bot messages (Prevents loops with Project Planner)
+    if message.author.bot:
         return
 
     # Auto-clean #tickets channel to prevent accidental posting
@@ -1646,7 +1776,7 @@ if __name__ == "__main__":
     is_dev = "--dev" in sys.argv
     hostname = socket.gethostname()
     
-    # Production VM Hostname check (adjust if VM name is different, e.g. "bad-node-01")
+    # Production VM Hostname check
     # If we are NOT on the VM and NOT in dev mode, stop.
     # Assuming VM name is "instance-20250114-192736" or similar, or we check for NOT "ControllerPC"
     # Safest is to require --dev if on Windows/ControllerPC

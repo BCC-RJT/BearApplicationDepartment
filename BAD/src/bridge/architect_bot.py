@@ -16,9 +16,10 @@ ENV_PATH = os.path.join(REPO_ROOT, '.env')
 # Load environment variables
 load_dotenv(ENV_PATH)
 
-ARCHITECT_TOKEN = os.getenv('ARCHITECT_TOKEN')
+# Standardized Token
+ARCHITECT_TOKEN = os.getenv('PROJECT_PLANNER_TOKEN') or os.getenv('ARCHITECT_TOKEN')
 if not ARCHITECT_TOKEN:
-    print("⚠️ ARCHITECT_TOKEN not found. Falling back to DISCORD_TOKEN.")
+    print("⚠️ PROJECT_PLANNER_TOKEN not found. Falling back to DISCORD_TOKEN.")
     ARCHITECT_TOKEN = os.getenv('DISCORD_TOKEN')
 
 # If not set, it won't listen anywhere specific (or we could enforce it)

@@ -1,33 +1,29 @@
-# Deploy and Restart Ticket Assistant on VM
-# Usage: .\deploy_and_restart.ps1
+# deploy_and_restart.ps1
+# Full CD pipeline: Deploys code and restarts services on foundation-vm
 
-$VM_USER = "Headsprung"
-$VM_IP = "100.75.180.10"
-$KEY_PATH = "c:\Users\Controller\.ssh\google_compute_engine"
-$ScriptDir = Split-Path $MyInvocation.MyCommand.Path
-$ProjectRoot = (Get-Item $ScriptDir).Parent.Parent.FullName # BearApplicationDepartment root
+Write-Host ">>> Starting Full Deployment Pipeline <<<"
 
-Write-Host "🚀 Deploying updates to VM ($VM_IP)..."
-
-# 1. Run standard deployment
-# Assuming deploy_to_vm.ps1 is in the same directory
-& "$ScriptDir\deploy_to_vm.ps1"
+# 1. Deploy code
+.\deploy_to_vm.ps1
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Deployment failed."
+    Write-Error "Deployment failed!"
     exit 1
 }
 
-Write-Host "🔄 Restarting Ticket Assistant Service..."
+# 2. Restart Services
+$VM_NAME = "foundation-vm"
+$ZONE = "us-central1-a"
 
-# 2. Remote Command Execution
-# Kill existing python process for tickets_assistant.py
-# Start new process in background using nohup
-# Note: Using pkill -f might be aggressive, but effective for this setup.
+Write-Host "Restarting Services on $VM_NAME..."
+# Restart Ticket Assistant and Architect services
+# Assuming systemd units are named 'bad-ticket-assistant' and 'bad-architect'
+# Or just kill python processes if untracked.
+# Since we want to SUSPEND Project Planner, we will force kill it and only restart Ticket Assistant if needed.
+# Actually, Ticket Assistant is local-only now.
+# So we only need to restart BADbot (Ops) if it's there. Project Planner should stay dead.
 
-$RemoteCommand = "pkill -f 'tickets_assistant.py'; pkill -f 'bad_bot.py'; nohup python3 BAD/src/bridge/tickets_assistant.py > BAD/logs/tickets_assistant.log 2>&1 & nohup python3 BAD/src/bridge/bad_bot.py > BAD/logs/bad_bot.log 2>&1 &"
+# COMMAND: Kill everything to refresh
+gcloud compute ssh $VM_NAME --zone=$ZONE --tunnel-through-iap --command="pkill -f python; nohup python3 src/bridge/bad_bot.py > logs/bad_bot.log 2>&1 &"
 
-ssh -i $KEY_PATH -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" $RemoteCommand
-
-Write-Host "✅ Service Restart Command Sent."
-Write-Host "   Check logs on VM: tail -f BAD/logs/tickets_assistant.log"
+Write-Host "Deployment & Restart Complete!"

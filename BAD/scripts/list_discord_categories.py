@@ -1,5 +1,6 @@
 
 import discord
+print("DEBUG: Script started...")
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -23,8 +24,8 @@ else:
     load_dotenv()
     print("Loaded .env from current directory (or default search).")
 
-TOKEN = os.getenv('ARCHITECT_TOKEN') or os.getenv('DISCORD_TOKEN')
-token_source = "ARCHITECT_TOKEN" if os.getenv('ARCHITECT_TOKEN') else "DISCORD_TOKEN"
+TOKEN = os.getenv('TICKET_ASSISTANT_TOKEN') or os.getenv('ARCHITECT_TOKEN') or os.getenv('DISCORD_TOKEN')
+token_source = "TICKET_ASSISTANT_TOKEN" if os.getenv('TICKET_ASSISTANT_TOKEN') else ("ARCHITECT_TOKEN" if os.getenv('ARCHITECT_TOKEN') else "DISCORD_TOKEN")
 print(f"Using token from: {token_source}")
 
 

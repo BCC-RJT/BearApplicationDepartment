@@ -33,7 +33,7 @@ def announce_presence():
     os_name = platform.system()
     release = platform.release()
 
-    goal_status = "⚠️ BLOCKED: Connection Timeout to 100.75.180.10. Seeking info from successful teams."
+    goal_status = "⚠️ BLOCKED: Connection Timeout to Production VM. Seeking info."
     
     payload = {
         "username": "Antigravity Node",
@@ -58,7 +58,7 @@ def announce_presence():
         
         # Also post a specific inquiry as a regular message to ping the team
         inquiry = {
-            "content": "🚨 **CROSS-TEAM INQUIRY**: One of our teams is reporting a timeout to the VM at `100.75.180.10`. If your team has successfully restarted the server in a previous session, please reply with your connection method (Tailscale status, SSH config, or Tunnel info)."
+            "content": "🚨 **CROSS-TEAM INQUIRY**: One of our teams is reporting a connectivity issue to the production VM. If your team has successfully restarted the server, please reply with your connection details."
         }
         requests.post(WEBHOOK_URL, json=inquiry)
     except Exception as e:

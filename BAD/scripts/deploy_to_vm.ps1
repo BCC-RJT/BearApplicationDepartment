@@ -1,32 +1,19 @@
+# deploy_to_vm.ps1 (Refactored for GCloud IAP)
+# Deploys code to foundation-vm (takeoff-specialist)
 
-# Deploy BAD codebase to Antigravity VM
-# Usage: .\deploy_to_vm.ps1
+$VM_NAME = "foundation-vm"
+$ZONE = "us-central1-a"
 
-$VM_USER = "Headsprung"
-$VM_IP = "100.75.180.10"
-$LOCAL_ROOT = "c:\Users\Controller\Documents\projects\BearApplicationDepartment"
-$KEY_PATH = "c:\Users\Controller\.ssh\google_compute_engine"
-$TarFile = "bad_deploy.tar"
+Write-Host "Creating deployment tarball..."
+# Exclude venv, .git, __pycache__, logs, data to keep it small
+tar --exclude='venv' --exclude='.git' --exclude='__pycache__' --exclude='logs' --exclude='data' -cf bad_deploy.tar .
 
-if (-not (Test-Path $TarFile)) {
-    Write-Error "File $TarFile not found. Please run 'tar -cf bad_deploy.tar BAD' first."
-    exit 1
-}
+Write-Host "Uploading tarball to $VM_NAME..."
+gcloud compute scp bad_deploy.tar ${VM_NAME}:~/bad_deploy.tar --zone=$ZONE --tunnel-through-iap
 
-Write-Host "Deploying to $VM_IP..."
+Write-Host "Extracting and Installing on $VM_NAME..."
+gcloud compute ssh $VM_NAME --zone=$ZONE --tunnel-through-iap --command="tar -xf bad_deploy.tar && rm bad_deploy.tar && pip3 install -r requirements.txt"
 
-# 1. Upload
-Write-Host "Uploading payload..."
-scp -i $KEY_PATH -o StrictHostKeyChecking=no $TarFile "${VM_USER}@${VM_IP}:/home/${VM_USER}/${TarFile}"
-
-# 2. Unpack
-Write-Host "Unpacking on remote..."
-ssh -i $KEY_PATH -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" "tar -xf $TarFile && rm $TarFile"
-
-# 3. Sync .env
-Write-Host "Syncing .env..."
-scp -i $KEY_PATH -o StrictHostKeyChecking=no "$LOCAL_ROOT\.env" "${VM_USER}@${VM_IP}:/home/${VM_USER}/.env"
-
-Write-Host "Deployment Complete."
-Write-Host "Installing dependencies..."
-ssh -i $KEY_PATH -o StrictHostKeyChecking=no "$VM_USER@$VM_IP" "pip3 install discord.py PyGithub python-dotenv google-generativeai google-api-python-client"
+Write-Host "Deployment Complete!"
+# Clean up local tar
+Remove-Item bad_deploy.tar
